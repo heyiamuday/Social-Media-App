@@ -3,18 +3,43 @@ import { useMutation, gql } from '@apollo/client'
 import { useNavigate } from 'react-router-dom'
 import './AuthForm.css'
 
-
 const SIGNUP_MUTATION = gql`
   mutation Signup($name: String!, $email: String!, $password: String!) {
-    signup(name: $name, email: $email, password: $password)
+    signup(name: $name, email: $email, password: $password) {
+      token
+      user {
+        id
+        name
+        email
+      }
+    }
   }
-`
+`;
 
 const LOGIN_MUTATION = gql`
   mutation Login($email: String!, $password: String!) {
-    login(email: $email, password: $password)
+    login(email: $email, password: $password) {
+      token
+      user {
+        id
+        name
+        email
+      }
+    }
   }
-`
+`;
+
+// const SIGNUP_MUTATION = gql`
+//   mutation Signup($name: String!, $email: String!, $password: String!) {
+//     signup(name: $name, email: $email, password: $password)
+//   }
+// `
+
+// const LOGIN_MUTATION = gql`
+//   mutation Login($email: String!, $password: String!) {
+//     login(email: $email, password: $password)
+//   }
+// `
 
 export default function AuthForm() {
   const [isLogin, setIsLogin] = useState(true)
@@ -28,11 +53,18 @@ export default function AuthForm() {
     isLogin ? LOGIN_MUTATION : SIGNUP_MUTATION,
     {
       onCompleted: (data) => {
-        localStorage.setItem('token', data.login || data.signup)
+        localStorage.setItem('token', data.login.token || data.signup.token)
         navigate('/')
       },
       onError: (err) => setError(err.message)
     }
+    // {
+    //   onCompleted: (data) => {
+    //     localStorage.setItem('token', data.login || data.signup)
+    //     navigate('/')
+    //   },
+    //   onError: (err) => setError(err.message)
+    // }
   )
 
   const handleSubmit = (e: React.FormEvent) => {

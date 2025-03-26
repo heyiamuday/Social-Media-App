@@ -1,10 +1,29 @@
+type AuthPayload {
+    token: String!
+    user: User!
+}
 
+type User {
+    id: ID!
+    name: String!
+    email: String!
+    posts: [Post!]!
+}
 
-type Mutation {
-  signup(name: String!, email: String!, password: String!): String!
-  login(email: String!, password: String!): String!
+type Post {
+    id: ID!
+    title: String!
+    content: String
+    published: Boolean!
+    author: User!
 }
 
 type Query {
-  hello: String
+    me: User
+    allUsers: [User!]!
+}
+
+type Mutation {
+    signup(name: String!, email: String!, password: String!): AuthPayload!
+    login(email: String!, password: String!): AuthPayload!
 }

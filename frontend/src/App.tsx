@@ -1,6 +1,9 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
-import AuthForm from './components/AuthForm'
-import Home from './components/Home.tsx'
+import AuthForm from './features/auth/AuthForm.tsx'
+import Home from './features/user/Home.tsx'
+import Profile from './features/user/Profile.tsx'
+
+
 
 function App() {
   return (
@@ -8,6 +11,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/auth" element={<AuthForm />} />
+        <Route path="/profile" element={<Profile />} />
       </Routes>
     </Router>
   )
