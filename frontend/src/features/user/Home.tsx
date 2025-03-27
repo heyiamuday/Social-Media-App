@@ -15,7 +15,7 @@ export default function Home() {
       <h1>Welcome to Social Media App</h1>
       <nav>
         <Link to="/profile">My Profile</Link>
-        <Link to="/auth">Login/Signup</Link>
+        {/* <Link to="/auth">Login/Signup</Link> */}
       </nav>
       <button
         onClick={() => {

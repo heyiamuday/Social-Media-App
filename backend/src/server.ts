@@ -15,7 +15,9 @@ const __dirname = path.dirname(new URL(import.meta.url).pathname);
 console.log('Current working directory:', process.cwd());
 
 console.log('__dirname:', __dirname);
-const typeDefs = readFileSync(path.join(__dirname, '../schema.graphql'), 'utf-8');
+// const typeDefs = readFileSync(path.join(__dirname, '../schema.graphql'), 'utf-8');
+const typeDefs = readFileSync('/home/bughunter/BUG~REALM/bugbountycourses/Javascript/TOP/Another stack/Social-Media-App/backend/schema.graphql', 'utf-8');
+
 
 async function startServer() {
   const app = express();

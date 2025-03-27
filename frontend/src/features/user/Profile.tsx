@@ -1,5 +1,5 @@
 import { useQuery, gql } from '@apollo/client';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react'; // Import useEffect
 
 const GET_PROFILE = gql`
@@ -7,6 +7,7 @@ const GET_PROFILE = gql`
     me {
       id
       name
+      username
       email
       posts {
         id
@@ -32,8 +33,10 @@ export default function Profile() {
 
   return (
     <div className="profile-container">
+      <Link to = '/' >Home</Link>
       <h1>{data.me.name}'s Profile</h1>
       <div className="profile-info">
+        <p>Username: {`@${data.me.username}`}</p>
         <p>Email: {data.me.email}</p>
         <h3>Posts ({data.me.posts.length})</h3>
         <ul className="posts-list">
