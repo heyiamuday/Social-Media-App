@@ -1,4 +1,4 @@
-import { Context } from './context'
+import { Context } from '../context'
 import jwt from 'jsonwebtoken'
 
 export const APP_SECRET = process.env.APP_SECRET || 'appsecret321'

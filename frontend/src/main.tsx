@@ -3,7 +3,7 @@ import { ApolloClient, InMemoryCache, ApolloProvider, createHttpLink } from '@ap
 import { setContext } from '@apollo/client/link/context';
 import { createRoot } from 'react-dom/client';
 import App from './App';
-import './index.css';
+// import './index.css'
 
 const httpLink = createHttpLink({
   uri: import.meta.env.VITE_API_URL,

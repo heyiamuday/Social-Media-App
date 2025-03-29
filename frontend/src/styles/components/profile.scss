@@ -1,0 +1,227 @@
+// src/styles/components/profile.scss
+
+// Global Variables (you could also import these from a shared variables file)
+$background: #f3f4f6;       // light gray background
+$card-bg: #ffffff;         // white card background
+$primary-color: #6366f1;   // primary (indigo) for buttons
+$primary-hover: darken($primary-color, 10%);
+$text-primary: #1f2937;    // dark text
+$text-secondary: #6b7280;  // lighter gray text
+$border-color: #e5e7eb;    // light border
+$shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+// Responsive breakpoints
+$breakpoint-sm: 640px;
+$breakpoint-md: 768px;
+$breakpoint-lg: 1024px;
+
+.profile {
+  background-color: $background;
+  min-height: 100vh;
+  padding: 2rem;
+
+  &__card {
+    max-width: 960px;
+    margin: 0 auto;
+    background-color: $card-bg;
+    border-radius: 8px;
+    box-shadow: $shadow;
+    overflow: hidden;
+  }
+
+  &__header {
+    padding: 1.5rem;
+    border-bottom: 1px solid $border-color;
+    background-color: $card-bg;
+
+    // Navigation and Edit Button
+    .profile__nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      a {
+        color: $primary-color;
+        text-decoration: none;
+        font-weight: 600;
+        &:hover {
+          text-decoration: underline;
+        }
+      }
+
+      .profile__edit-btn {
+        background-color: $primary-color;
+        color: #fff;
+        font-weight: 600;
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+        &:hover {
+          background-color: $primary-hover;
+        }
+      }
+    }
+
+    // Profile Info: Avatar, Name, Username
+    .profile__info {
+      margin-top: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+
+      &-avatar {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background-color: #ddd;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        font-weight: bold;
+        color: $text-secondary;
+      }
+
+      &-details {
+        h1 {
+          font-size: 1.75rem;
+          color: $text-primary;
+          margin: 0;
+        }
+        p {
+          color: $text-secondary;
+          margin: 0.25rem 0 0;
+        }
+      }
+    }
+
+    // Bio and Email
+    .profile__bio {
+      margin-top: 1rem;
+      font-size: 1rem;
+      color: $text-primary;
+    }
+
+    .profile__email {
+      margin-top: 0.5rem;
+      font-size: 0.875rem;
+      color: $text-secondary;
+    }
+  }
+
+  &__posts {
+    padding: 1.5rem;
+
+    h3 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: $text-primary;
+      margin-bottom: 1rem;
+    }
+
+    &-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1rem;
+
+      @media (min-width: $breakpoint-sm) {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      @media (min-width: $breakpoint-md) {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      @media (min-width: $breakpoint-lg) {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+
+    &-card {
+      background-color: $card-bg;
+      border-radius: 4px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+
+      img {
+        width: 100%;
+        height: auto;
+        object-fit: cover;
+        // Maintain a square aspect ratio
+        aspect-ratio: 1 / 1;
+      }
+
+      p {
+        padding: 0.5rem;
+        font-size: 0.875rem;
+        color: $text-secondary;
+      }
+    }
+  }
+
+  // Modal for Editing Profile
+  &__modal {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+
+    &-content {
+      background-color: $card-bg;
+      padding: 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      width: 90%;
+      max-width: 500px;
+    }
+  }
+}
+
+
+  // Post Grid styling
+  .post-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(1, 1fr);
+
+    @media (min-width: 640px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    @media (min-width: 1024px) {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  // Individual Post Card styling
+  .post-card {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    transition: transform 0.2s ease-in-out;
+
+    &:hover {
+      transform: scale(1.02);
+    }
+
+    // Inner content spacing
+    .p-4 {
+      padding: 1rem;
+    }
+
+    img {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 4px;
+    }
+
+    p {
+      margin-top: 0.5rem;
+      font-size: 1rem;
+      color: #333;
+    }
+  }

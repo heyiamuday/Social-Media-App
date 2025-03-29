@@ -1,0 +1,49 @@
+// src/styles/components/editProfile.scss
+
+.edit-profile-popup {
+    @apply fixed inset-0 flex items-center justify-center bg-gray-500 bg-opacity-75 z-50;
+  
+    .popup-container {
+      @apply bg-white rounded-lg shadow-lg overflow-hidden p-6 w-full max-w-lg;
+      
+      @media (max-width: 640px) {
+        @apply p-4;
+      }
+  
+      .header {
+        @apply flex justify-between items-center mb-4;
+  
+        h2 {
+          @apply text-2xl font-bold text-gray-800;
+        }
+  
+        .close-btn {
+          @apply text-gray-500 hover:text-gray-700 text-3xl cursor-pointer;
+        }
+      }
+  
+      form {
+        .form-field {
+          @apply mb-4;
+  
+          label {
+            @apply block text-sm font-medium text-gray-700;
+          }
+  
+          input,
+          textarea {
+            @apply mt-1 p-2 border border-gray-300 rounded w-full focus:outline-none focus:ring-2 focus:ring-indigo-500;
+          }
+        }
+  
+        .submit-btn {
+          @apply w-full bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-4 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500;
+        }
+  
+        .error-message {
+          @apply mt-2 text-red-500 text-sm;
+        }
+      }
+    }
+  }
+  

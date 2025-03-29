@@ -1,50 +1,114 @@
-import { useQuery, gql } from '@apollo/client';
-import { Link, useNavigate } from 'react-router-dom';
-import { useEffect } from 'react'; // Import useEffect
+          import { useState } from 'react';
+          import { useQuery, gql } from '@apollo/client';
+          import { Link, useNavigate } from 'react-router-dom';
+          import { useEffect } from 'react'; 
+          import EditProfile from './EditProfile'; 
+          import '../../styles/components/profile.scss';
+          
+          const GET_PROFILE = gql`
+            query GetProfile {
+              me {
+                id
+                name
+                username
+                email
+                bio
+                posts {
+                  id
+                  caption
+                  imageUrl 
+                }
+              }
+            }
+          `;
 
-const GET_PROFILE = gql`
-  query GetProfile {
-    me {
-      id
-      name
-      username
-      email
-      posts {
-        id
-        title
-      }
-    }
-  }
-`;
 
 export default function Profile() {
   const navigate = useNavigate();
   const { loading, error, data } = useQuery(GET_PROFILE);
+  // const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
 
   useEffect(() => {
     if (error) {
       localStorage.removeItem('token');
       navigate('/auth');
     }
-  }, [error, navigate]); // Add error and navigate as dependencies
+  }, [error, navigate]);
 
-  if (loading) return <div>Loading...</div>;
-  if (!data) return null; //prevent trying to access data before it is available.
+  if (loading) return <div className="text-center py-8">Loading profile...</div>;
+  if (!data?.me) return <div className="text-center py-8">Profile not found.</div>;
+
+  const { name, username, email, bio, posts } = data.me;
 
   return (
-    <div className="profile-container">
-      <Link to = '/' >Home</Link>
-      <h1>{data.me.name}'s Profile</h1>
-      <div className="profile-info">
-        <p>Username: {`@${data.me.username}`}</p>
-        <p>Email: {data.me.email}</p>
-        <h3>Posts ({data.me.posts.length})</h3>
-        <ul className="posts-list">
-          {data.me.posts.map((post: any) => (
-            <li key={post.id}>{post.title}</li>
-          ))}
-        </ul>
+    <div className="bg-gray-100 min-h-screen py-8">
+      <div className="max-w-3xl mx-auto bg-white shadow-lg rounded-md overflow-hidden">
+        {/* Profile Header */}
+        <div className="bg-white p-6 border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            <Link to="/" className="text-indigo-600 hover:underline">&larr; Home</Link>
+            <button> <Link to="/profile/edit"  className="bg-white-500 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded focus:outline-none focus:shadow-outline" >Profile Edit  </Link>
+            </button>
+          </div>
+          <div className="mt-6 flex items-center space-x-4">
+            <div className="w-16 h-16 rounded-full bg-gray-300 flex items-center justify-center text-2xl font-bold text-gray-600">
+              {name && name.charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-800">{name}</h1>
+              <p className="text-gray-600">@{username}</p>
+            </div>
+          </div>
+          <p className="text-gray-700 mt-2">{bio || 'No bio provided.'}</p>
+          <p className="text-gray-700 mt-1 text-sm">Email: {email}</p>
+        </div>
+
+        {/* Posts Section */}
+        <div className="p-6">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">Posts ({posts.length})</h3>
+          {posts.length > 0 ? (
+            <div className="post-grid">
+              {posts.map((post) => (
+                <div key={post.id} className="post-card">
+
+                  <div >
+                    {/* Delete post button */}
+                  <button onClick={post.removeItem} > 
+                    &times; 
+                 </button>
+                  </div>
+
+                  {post.imageUrl ? (
+                    <img 
+                    src={post.imageUrl} 
+                    alt={post.caption} 
+                    className="w-full h-auto rounded-md mb-2"  
+                    />
+                  ) : null } 
+                  {post.caption && (
+                    <p className="text-gray-700 mt-2">{post.caption}</p>
+                  )}
+
+
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500">No posts yet.</p>
+          )}
+        </div>
       </div>
+
+      {/* Edit Profile Popup */}
+      {/* {isEditProfileOpen && (
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex justify-center items-center z-50">
+          <div className="bg-white rounded-lg shadow-lg overflow-hidden p-6 max-w-md w-full">
+            <EditProfile onClose={() => setIsEditProfileOpen(false)} />
+          </div>
+        </div>
+      )} */}
     </div>
   );
 }
+
+

@@ -1,0 +1,107 @@
+@use '../base/variables' as *;
+
+// src/styles/components/home.scss
+
+// Import global variables from base folder
+// src/styles/components/home.scss
+
+// Optionally, if you're using variables (from your global variables file)
+// you can import them here. For example:
+// @use '../base/variables' as *;
+
+.home-container {
+  padding: 1rem;
+  background-color: #fafafa; // Use your global background color if available
+  min-height: 100vh; // Ensure it covers full viewport height
+
+  // Logout Button styling
+  .logout-btn {
+    background-color: #ed4956;
+    color: white;
+    font-weight: bold;
+    border: none;
+    border-radius: 4px;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin-bottom: 1rem;
+
+    &:hover {
+      background-color: darken(#ed4956, 10%);
+      
+    }
+  }
+
+  // Post Grid styling
+  .post-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(1, 1fr);
+
+    @media (min-width: 640px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    @media (min-width: 1024px) {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  // Individual Post Card styling
+  .post-card {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    transition: transform 0.2s ease-in-out;
+
+    &:hover {
+      transform: scale(1.02);
+    }
+
+    // Inner content spacing
+    .p-4 {
+      padding: 1rem;
+    }
+
+    img {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 4px;
+    }
+
+    p {
+      margin-top: 0.5rem;
+      font-size: 1rem;
+      color: #333;
+    }
+  }
+
+  // Floating Action Button styling
+  .fab-btn {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    width: 3.5rem;
+    height: 3.5rem;
+    background: linear-gradient(45deg, #6366f1, #8b5cf6);
+    border: none;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease-in-out;
+    cursor: pointer;
+
+    &:hover {
+      transform: scale(1.05);
+    }
+
+    svg {
+      width: 1.5rem;
+      height: 1.5rem;
+      stroke: currentColor;
+    }
+  }
+}

@@ -1,0 +1,13 @@
+// src/styles/main.scss
+
+@use 'base/variables' as *;
+
+/* Optionally, add your global resets or typography here */
+/* e.g., @import 'base/reset'; */
+
+/* Global body styling */
+body {
+  background-color: $light-gray;
+  color: $gray-dark;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}

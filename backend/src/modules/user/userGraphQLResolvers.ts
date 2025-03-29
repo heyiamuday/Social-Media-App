@@ -1,6 +1,6 @@
 import { Resolvers } from '../../../generated/graphql';
 import { PrismaClient } from '@prisma/client';
-import { getUserId, APP_SECRET } from '../../utils';
+import { getUserId, APP_SECRET } from '../../utils/token';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 
@@ -60,6 +60,23 @@ export const userResolvers: Resolvers = {
 
       const token = jwt.sign({ userId: user.id }, APP_SECRET);
       return { token, user };
+    },
+
+    updateProfile: async (_parent, { name, username, email, bio }, context) => {
+      const userId = getUserId(context);
+      // Need to add checks here to ensure the user owns this profile
+      // and prevent updating email/username if they are already taken
+      const existingUser = await prisma.user.findUnique({ where: { username } });
+        if (existingUser && existingUser.id !== userId) {
+        throw new Error('Username already taken');
+      }
+
+
+      const updateUser = await prisma.user.update({
+        where: { id: userId },
+        data: { name, username, email, bio },
+      });
+      return updateUser;
     },
   },
 
