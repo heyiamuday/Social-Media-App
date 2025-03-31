@@ -2,9 +2,9 @@
 import { useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useQuery, gql } from '@apollo/client';
-// Import the custom Sass file for additional styling
-// import '../../styles/components/home.scss';
 import '../../styles/components/home.scss';
+import LikeButton from '../post/LikeButton';
+import PostCard from "../post/PostCard";
 
 const GET_ALL_POSTS = gql`
   query GetAllPosts {
@@ -13,6 +13,8 @@ const GET_ALL_POSTS = gql`
       imageUrl
       caption
       createdAt
+      likeCount
+      likedByCurrentUser
       author {
         id
         username
@@ -55,7 +57,15 @@ export default function Home() {
 
       {/* Post Grid */}
       <div className="post-grid">
-        {data?.allPosts?.map((post: any) => (
+
+      <div className="post-grid">
+  {data?.allPosts?.map((post: any) => (
+    <PostCard key={post.id} post={post} />
+  ))}
+</div>
+
+
+        {/* {data?.allPosts?.map((post: any) => (
           <div key={post.id} className="post-card">
             <div className="p-4">
               <div className="flex items-center justify-between mb-2">
@@ -78,7 +88,7 @@ export default function Home() {
               )}
             </div>
           </div>
-        ))}
+        ))} */}
       </div>
 
       {/* Floating Action Button */}

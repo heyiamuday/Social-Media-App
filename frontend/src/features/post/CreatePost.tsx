@@ -17,6 +17,8 @@ const CREATE_POST_MUTATION = gql`
   }
 `;
 
+
+
 export default function CreatePost() {
   const navigate = useNavigate();
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -37,6 +39,7 @@ export default function CreatePost() {
       setPosting(false);
     },
   });
+
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {

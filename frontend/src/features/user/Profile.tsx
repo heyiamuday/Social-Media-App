@@ -1,5 +1,5 @@
           import { useState } from 'react';
-          import { useQuery, gql } from '@apollo/client';
+          import { useQuery, gql, useMutation } from '@apollo/client';
           import { Link, useNavigate } from 'react-router-dom';
           import { useEffect } from 'react'; 
           import EditProfile from './EditProfile'; 
@@ -23,10 +23,51 @@
           `;
 
 
+const DELETE_POST = gql`
+  mutation DeletePost($id: ID!) {
+    deletePost(id: $id) {
+      success
+      message
+    }
+  }
+`;
+
+
+
 export default function Profile() {
   const navigate = useNavigate();
   const { loading, error, data } = useQuery(GET_PROFILE);
   // const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+
+  const [deletePost] = useMutation(DELETE_POST, {
+    update(cache, { data: { deletePost } } ) {
+      // read query
+      const existPostQuery = gql`
+      query GetPosts {
+        posts {
+          id
+        }
+      }`;
+      //read post on cache
+      const existPostQueryData = cache.readQuery({ query: existPostQuery});
+
+      //if the data exist delete it
+      if (existPostQuery && existPostQueryData ) {
+        const updatePosts = existPostQueryData.posts.filter(
+          (post) => post.id !== deletePost?.id
+        )
+        // Write the updated list of posts back to the cache
+        cache.writeQuery({
+          query: existPostQuery,
+          data: {posts: updatePosts},
+        });
+      }
+
+    },
+    onError(error) {
+      console.error("Error delete post", error)
+    }
+  })
 
   useEffect(() => {
     if (error) {
@@ -73,7 +114,7 @@ export default function Profile() {
 
                   <div >
                     {/* Delete post button */}
-                  <button onClick={post.removeItem} > 
+                  <button onClick={() => deletePost({ variables: { id: post.id }})} > 
                     &times; 
                  </button>
                   </div>
@@ -89,13 +130,17 @@ export default function Profile() {
                     <p className="text-gray-700 mt-2">{post.caption}</p>
                   )}
 
-
+                    <div>
+                      
+                    </div>
                 </div>
               ))}
             </div>
+            
           ) : (
             <p className="text-gray-500">No posts yet.</p>
           )}
+
         </div>
       </div>
 
