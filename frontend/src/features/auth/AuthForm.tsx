@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useMutation, gql } from '@apollo/client';
 import { useNavigate } from 'react-router-dom';
+import jwt from 'jsonwebtoken';
 
 const SIGNUP_MUTATION = gql`
   mutation Signup($name: String!, $username: String!, $email: String!, $password: String!) {
@@ -29,6 +30,23 @@ const LOGIN_MUTATION = gql`
     }
   }
 `;
+
+export const APP_SECRET = process.env.APP_SECRET || 'fallback_secret_not_for_production';
+
+export function getUserId(context) {
+  try {
+    const Authorization = context.req.headers.authorization;
+    if (Authorization) {
+      const token = Authorization.replace('Bearer ', '');
+      const verifiedToken = jwt.verify(token, APP_SECRET);
+      return verifiedToken.userId;
+    }
+    throw new Error('Not authenticated');
+  } catch (error) {
+    console.error('Authentication error:', error);
+    throw new Error('Not authenticated');
+  }
+}
 
 export default function AuthForm() {
   const [isLogin, setIsLogin] = useState(true);
