@@ -7,7 +7,7 @@ import './styles/main.scss';
 
 const httpLink = createHttpLink({
   uri: import.meta.env.VITE_API_URL,
-  credentials: 'include',
+  credentials: 'same-origin',
   fetchOptions: {
     mode: 'cors',
   },
