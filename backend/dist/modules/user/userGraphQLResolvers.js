@@ -1,0 +1,218 @@
+import { PrismaClient } from '@prisma/client';
+import { getUserId, APP_SECRET } from '../../utils/token.js';
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
+import { GraphQLError } from 'graphql';
+const prisma = new PrismaClient();
+// Define a simplified resolver type
+export const userResolvers = {
+    Query: {
+        userProfile: async (_parent, { username }, context) => {
+            try {
+                if (username) {
+                    console.log(`Fetching profile for username: ${username}`);
+                    const user = await prisma.user.findUnique({
+                        where: { username: username },
+                        include: { posts: { orderBy: { createdAt: 'desc' } } },
+                    });
+                    if (!user) {
+                        console.log(`User not found: ${username}`);
+                        return null;
+                    }
+                    console.log(`Found user: ${user.username}`);
+                    return user;
+                }
+                else {
+                    console.log('Fetching profile for logged-in user');
+                    const userId = getUserId(context);
+                    if (!userId) {
+                        console.log('Authentication required for /profile');
+                        throw new GraphQLError('User is not authenticated', {
+                            extensions: { code: 'UNAUTHENTICATED' },
+                        });
+                    }
+                    const user = await prisma.user.findUnique({
+                        where: { id: userId },
+                        include: { posts: { orderBy: { createdAt: 'desc' } } },
+                    });
+                    if (!user) {
+                        console.error(`Logged-in user with ID ${userId} not found in DB.`);
+                        throw new GraphQLError('Authenticated user not found', {
+                            extensions: { code: 'INTERNAL_SERVER_ERROR' },
+                        });
+                    }
+                    console.log(`Found logged-in user: ${user.username}`);
+                    return user;
+                }
+            }
+            catch (error) {
+                console.error('Error in userProfile resolver:', error);
+                if (error instanceof GraphQLError) {
+                    throw error;
+                }
+                throw new GraphQLError('Could not fetch user profile', {
+                    extensions: { code: 'INTERNAL_SERVER_ERROR' },
+                });
+            }
+        },
+        me: async (_parent, _args, context) => {
+            console.log('Executing original \'me\' resolver');
+            try {
+                const userId = getUserId(context);
+                return prisma.user.findUnique({
+                    where: { id: userId },
+                    include: { posts: { orderBy: { createdAt: 'desc' } } },
+                });
+            }
+            catch (error) {
+                console.error("Error in 'me' resolver:", error);
+                if (error instanceof GraphQLError && error.extensions.code === 'UNAUTHENTICATED') {
+                    throw error;
+                }
+                throw new GraphQLError('Could not fetch user data', {
+                    extensions: { code: 'INTERNAL_SERVER_ERROR' },
+                });
+            }
+        },
+        allUsers: async (_parent, _args, _context) => {
+            console.log('Fetching all users');
+            return prisma.user.findMany();
+        },
+    },
+    Mutation: {
+        signup: async (_parent, { name, username, email, password }, _context) => {
+            try {
+                const existingUserWithEmail = await prisma.user.findUnique({ where: { email } });
+                if (existingUserWithEmail)
+                    throw new GraphQLError('Email already exists', { extensions: { code: 'BAD_USER_INPUT', field: 'email' } });
+                const existingUserWithUsername = await prisma.user.findUnique({ where: { username } });
+                if (existingUserWithUsername)
+                    throw new GraphQLError('Username already exists', { extensions: { code: 'BAD_USER_INPUT', field: 'username' } });
+                const hashedPassword = await bcrypt.hash(password, 10);
+                const user = await prisma.user.create({
+                    data: { name, username, email, password: hashedPassword, bio: '' },
+                });
+                const token = jwt.sign({ userId: user.id }, APP_SECRET);
+                return { token, user };
+            }
+            catch (error) {
+                console.error('Signup Error:', error);
+                if (error instanceof GraphQLError)
+                    throw error;
+                throw new GraphQLError('Signup failed', { extensions: { code: 'INTERNAL_SERVER_ERROR' } });
+            }
+        },
+        login: async (_parent, { loginIdentifier, password }, _context) => {
+            try {
+                console.log('loginIdentifier:', loginIdentifier);
+                const user = await prisma.user.findFirst({
+                    where: {
+                        OR: [
+                            { email: loginIdentifier },
+                            { username: loginIdentifier },
+                        ],
+                    },
+                    include: { posts: { orderBy: { createdAt: 'desc' } } }
+                });
+                if (!user)
+                    throw new GraphQLError('Invalid credentials', { extensions: { code: 'BAD_USER_INPUT' } });
+                const valid = await bcrypt.compare(password, user.password);
+                if (!valid)
+                    throw new GraphQLError('Invalid credentials', { extensions: { code: 'BAD_USER_INPUT' } });
+                const token = jwt.sign({ userId: user.id }, APP_SECRET);
+                return { token, user };
+            }
+            catch (error) {
+                console.error('Login Error:', error);
+                if (error instanceof GraphQLError)
+                    throw error;
+                throw new GraphQLError('Login failed', { extensions: { code: 'INTERNAL_SERVER_ERROR' } });
+            }
+        },
+        updateProfile: async (_parent, args, context) => {
+            try {
+                console.log(`Updating profile for user ID derived from context`);
+                const userId = getUserId(context);
+                const { name, username, email, bio, avatarUrl } = args;
+                const existingUserByUsername = await prisma.user.findUnique({ where: { username } });
+                if (existingUserByUsername && existingUserByUsername.id !== userId) {
+                    throw new GraphQLError('Username already taken', { extensions: { code: 'BAD_USER_INPUT', field: 'username' } });
+                }
+                const existingUserByEmail = await prisma.user.findUnique({ where: { email } });
+                if (existingUserByEmail && existingUserByEmail.id !== userId) {
+                    throw new GraphQLError('Email already taken', { extensions: { code: 'BAD_USER_INPUT', field: 'email' } });
+                }
+                // Use a properly typed update object
+                const updateData = {
+                    name,
+                    username,
+                    email,
+                    bio: bio ?? null
+                };
+                // Only add avatarUrl if it's provided
+                if (avatarUrl !== undefined) {
+                    updateData.avatarUrl = avatarUrl;
+                }
+                const updatedUser = await prisma.user.update({
+                    where: { id: userId },
+                    data: updateData,
+                    include: { posts: { orderBy: { createdAt: 'desc' } } }
+                });
+                console.log(`Profile updated for user: ${updatedUser.username}`);
+                return updatedUser;
+            }
+            catch (error) {
+                console.error('Update Profile Error:', error);
+                if (error instanceof GraphQLError)
+                    throw error;
+                throw new GraphQLError('Failed to update profile', { extensions: { code: 'INTERNAL_SERVER_ERROR' } });
+            }
+        },
+        deletePost: async (_parent, { id: postId }, context) => {
+            try {
+                const userId = getUserId(context);
+                const postIdNum = parseInt(postId, 10);
+                if (isNaN(postIdNum)) {
+                    throw new GraphQLError('Invalid Post ID format', { extensions: { code: 'BAD_USER_INPUT' } });
+                }
+                const post = await prisma.post.findUnique({
+                    where: { id: postIdNum },
+                    select: { authorId: true }
+                });
+                if (!post) {
+                    throw new GraphQLError('Post not found', { extensions: { code: 'NOT_FOUND' } });
+                }
+                if (post.authorId !== userId) {
+                    throw new GraphQLError('You are not authorized to delete this post', { extensions: { code: 'FORBIDDEN' } });
+                }
+                await prisma.post.delete({
+                    where: { id: postIdNum },
+                });
+                console.log(`Post ${postIdNum} deleted by user ${userId}`);
+                return {
+                    success: true,
+                    message: 'Post deleted successfully',
+                    id: postId,
+                };
+            }
+            catch (error) {
+                console.error('Delete Post Error:', error);
+                if (error instanceof GraphQLError)
+                    throw error;
+                throw new GraphQLError('Failed to delete post', { extensions: { code: 'INTERNAL_SERVER_ERROR' } });
+            }
+        }
+    },
+    User: {
+        posts: (parent, _args, _context, _info) => {
+            if (parent.posts !== undefined) {
+                return parent.posts;
+            }
+            console.warn(`Fetching posts via User.posts field resolver for user ${parent.id}. Consider using 'include' in parent query.`);
+            return prisma.post.findMany({
+                where: { authorId: parent.id },
+                orderBy: { createdAt: 'desc' }
+            });
+        },
+    },
+};
