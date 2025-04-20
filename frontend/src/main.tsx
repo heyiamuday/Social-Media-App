@@ -4,7 +4,6 @@ import { setContext } from '@apollo/client/link/context';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 import './styles/main.scss';
-// import './index.css';
 
 const httpLink = createHttpLink({
   uri: import.meta.env.VITE_API_URL,
