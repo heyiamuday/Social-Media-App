@@ -7,6 +7,10 @@ import './styles/main.scss';
 
 const httpLink = createHttpLink({
   uri: import.meta.env.VITE_API_URL,
+  credentials: 'include',
+  fetchOptions: {
+    mode: 'cors',
+  },
 });
 
 const authLink = setContext((_: Operation, { headers }: { headers: Record<string, string> }) => {
