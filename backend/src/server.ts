@@ -46,7 +46,12 @@ async function startServer() {
 
   // Apply CORS middleware to the entire app
   app.use(cors<cors.CorsRequest>({
-    origin: ['http://localhost:3000', 'https://localhost:3000'], // Allow both HTTP and HTTPS
+    origin: [
+      'http://localhost:3000',
+      'https://localhost:3000',
+      'https://secrethub.onrender.com',
+      'https://*.netlify.app'
+    ],
     credentials: true,
   }));
 
