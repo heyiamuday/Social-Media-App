@@ -1,13 +1,21 @@
 // src/styles/main.scss
 
-@use 'base/variables' as *;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-/* Optionally, add your global resets or typography here */
-/* e.g., @import 'base/reset'; */
+// Import abstracts (variables, mixins)
+@import 'abstracts/variables';
+@import 'abstracts/mixins';
+
+// Import base styles (typography, resets, etc. - optional)
+// @import 'base/typography';
+
+// Import component styles (can be added later)
+// @import 'components/buttons';
+// @import 'components/modals';
 
 /* Global body styling */
 body {
-  background-color: $light-gray;
-  color: $gray-dark;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  @apply bg-gray-50 font-sans;
 }

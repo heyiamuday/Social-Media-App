@@ -1,15 +1,16 @@
 // main.tsx
-import { ApolloClient, InMemoryCache, ApolloProvider, createHttpLink } from '@apollo/client';
+import { ApolloClient, InMemoryCache, ApolloProvider, createHttpLink, Operation } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
 import { createRoot } from 'react-dom/client';
 import App from './App';
-// import './index.css'
+import './styles/main.scss';
+// import './index.css';
 
 const httpLink = createHttpLink({
   uri: import.meta.env.VITE_API_URL,
 });
 
-const authLink = setContext((_, { headers }) => {
+const authLink = setContext((_: Operation, { headers }: { headers: Record<string, string> }) => {
   const token = localStorage.getItem('token');
   return {
     headers: {

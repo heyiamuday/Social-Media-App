@@ -1,6 +1,6 @@
-import { Resolvers } from './generated/graphql'
-import { userResolvers } from './modules/user/userGraphQLResolvers'
-import { postResolvers } from './modules/post/postGraphQLResolvers'
+import { Resolvers } from './generated/graphql.js'
+import { userResolvers } from './modules/user/userGraphQLResolvers.js'
+import { postResolvers } from './modules/post/postGraphQLResolvers.js'
 
 export const resolvers: Resolvers = {
   Query: {

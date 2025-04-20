@@ -1,9 +1,7 @@
 // src/components/HomePage.tsx
 import { useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, gql } from '@apollo/client';
-import '../../styles/components/home.scss';
-import LikeButton from '../post/LikeButton';
 import PostCard from "../post/PostCard";
 
 const GET_ALL_POSTS = gql`
@@ -18,6 +16,7 @@ const GET_ALL_POSTS = gql`
       author {
         id
         username
+        avatarUrl
       }
     }
   }
@@ -25,89 +24,46 @@ const GET_ALL_POSTS = gql`
 
 export default function Home() {
   const navigate = useNavigate();
-  const { loading, error, data } = useQuery(GET_ALL_POSTS);
+  const { loading, error, data, refetch } = useQuery(GET_ALL_POSTS);
 
   useEffect(() => {
-    if (!localStorage.getItem('token')) {
+    const token = localStorage.getItem('token');
+    if (!token) {
       navigate('/auth');
+    } else {
+      refetch();
     }
-  }, [navigate]);
+  }, [navigate, refetch]);
 
-  if (loading)
-    return <div className="text-center py-8">Loading posts...</div>;
-  if (error)
-    return (
-      <div className="text-center py-8 text-red-500">
-        Error loading posts: {error.message}
-      </div>
-    );
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    navigate('/auth');
+    window.location.reload();
+  };
+
+  if (loading) return <div className="text-center py-10">Loading...</div>;
+  if (error) return <div className="text-center py-10 text-red-600">Error loading posts: {error.message}</div>;
 
   return (
-    <div className="home-container">
-      {/* Logout Button */}
+    <div className="w-full max-w-xl mx-auto">
+      <div className="space-y-6">
+        {data?.allPosts?.length > 0 ? (
+          data.allPosts.map((post: any) => (
+            <PostCard key={post.id} post={post} />
+          ))
+        ) : (
+          <div className="text-center py-10 text-gray-500">
+            No posts yet. Follow some users or create your first post!
+          </div>
+        )}
+      </div>
+
       <button
-        onClick={() => {
-          localStorage.removeItem('token');
-          navigate('/auth');
-        }}
-        className="logout-btn"
+        onClick={handleLogout}
+        className="fixed bottom-4 right-4 bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-full shadow-lg z-50"
       >
         Logout
       </button>
-
-      {/* Post Grid */}
-      <div className="post-grid">
-
-      <div className="post-grid">
-  {data?.allPosts?.map((post: any) => (
-    <PostCard key={post.id} post={post} />
-  ))}
-</div>
-
-
-        {/* {data?.allPosts?.map((post: any) => (
-          <div key={post.id} className="post-card">
-            <div className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center">
-                  <strong className="text-gray-800 font-semibold">
-                    {post.author.username}
-                  </strong>
-                  <small className="text-gray-500 text-sm ml-2">
-                    {new Date(post.createdAt).toLocaleString()}
-                  </small>
-                </div>
-              </div>
-              <img
-                src={post.imageUrl}
-                alt={post.caption}
-                className="w-full h-auto rounded-md"
-              />
-              {post.caption && (
-                <p className="text-gray-700 mt-2">{post.caption}</p>
-              )}
-            </div>
-          </div>
-        ))} */}
-      </div>
-
-      {/* Floating Action Button */}
-      <Link to="/create-post" className="fab-btn">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-6 w-6"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-          />
-        </svg>
-      </Link>
     </div>
   );
 }

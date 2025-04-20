@@ -1,159 +1,301 @@
-          import { useState } from 'react';
-          import { useQuery, gql, useMutation } from '@apollo/client';
-          import { Link, useNavigate } from 'react-router-dom';
-          import { useEffect } from 'react'; 
-          import EditProfile from './EditProfile'; 
-          import '../../styles/components/profile.scss';
+  //frontend/src/features/user/Profile.tsx
+  import { useState, useEffect } from 'react';
+          import { useQuery, gql, useMutation, ApolloError } from '@apollo/client';
+          import { Link, useNavigate, useParams } from 'react-router-dom';
           
-          const GET_PROFILE = gql`
-            query GetProfile {
-              me {
+          import EditProfileModal from './EditProfileModal'; 
+          import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+          import { faCog, faPlusSquare } from '@fortawesome/free-solid-svg-icons';
+          import { Avatar } from '../post/PostCard'; // Import the Avatar component
+          
+          // Define TypeScript types for the query response
+          interface Post {
+            id: string;
+            caption?: string | null;
+            imageUrl: string;
+          }
+
+          interface UserProfile {
+            id: string;
+            name: string;
+            username: string;
+            email: string; // Consider if email should be public
+            bio?: string | null;
+            avatarUrl?: string; // Add avatarUrl to user profile
+            posts: Post[];
+          }
+
+          interface GetProfileQueryResponse {
+            // Corresponds to the 'me' or 'userByUsername' query
+            profileData: UserProfile | null;
+          }
+
+          interface GetProfileQueryVars {
+            username?: string; // Make username optional
+          }
+
+          // Updated GraphQL Query to fetch profile by username OR the logged-in user
+          // We will use a single query name on the client, but map it to different
+          // backend queries based on whether 'username' variable is provided.
+          // Let's call the *backend* query 'userProfile' for flexibility.
+          const GET_PROFILE_QUERY = gql`
+            query GetUserProfile($username: String) {
+              # Alias the backend query based on whether username is provided
+              # The actual backend query names are 'userByUsername' and 'me'
+              profileData: userProfile(username: $username) {
                 id
                 name
                 username
-                email
+                email # Review: Should email be fetched for other users?
                 bio
+                avatarUrl
                 posts {
                   id
                   caption
-                  imageUrl 
+                  imageUrl
                 }
               }
             }
           `;
 
+          const DELETE_POST = gql`
+            # Assume mutation returns the ID of the deleted post for cache update
+            mutation DeletePost($id: ID!) {
+              deletePost(id: $id) {
+                success
+                message
+                deletedId: id # Assuming the backend returns the deleted ID
+              }
+            }
+          `;
 
-const DELETE_POST = gql`
-  mutation DeletePost($id: ID!) {
-    deletePost(id: $id) {
-      success
-      message
-    }
-  }
-`;
+          export default function Profile() {
+            const navigate = useNavigate();
+            const { username: usernameFromParams } = useParams<{ username: string }>(); // Get username from URL
+            const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+            const [loggedInUsername, setLoggedInUsername] = useState<string | null>(null); // To store logged-in user's username
 
+            const { loading, error, data, refetch } = useQuery<GetProfileQueryResponse, GetProfileQueryVars>(
+              GET_PROFILE_QUERY,
+              {
+                variables: { username: usernameFromParams }, // Pass username from URL, will be undefined for /profile
+                fetchPolicy: 'cache-and-network',
+                // If usernameFromParams is undefined, the resolver should fetch the logged-in user ('me')
+                // Notify on network status change can be useful for loading indicators
+                notifyOnNetworkStatusChange: true,
+              }
+            );
 
+            // Determine if viewing own profile AFTER data loads
+            const profileData = data?.profileData;
+            // We need a reliable way to know the logged-in user's ID or username.
+            // Let's assume we fetch the logged-in user's ID separately or get it from context.
+            // const loggedInUserId = getLoggedInUserIdFromContext(); // Placeholder
+            // const isOwnProfile = profileData && profileData.id === loggedInUserId;
+            // OR if the backend 'me' query returns the same structure:
+            const isOwnProfile = !usernameFromParams && !!profileData; // True if navigated via /profile and data loaded
 
-export default function Profile() {
-  const navigate = useNavigate();
-  const { loading, error, data } = useQuery(GET_PROFILE);
-  // const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+            const [deletePostMutation] = useMutation(DELETE_POST, {
+                // Update cache logic needs refinement based on the new query structure
+                update(cache, { data: { deletePost: deletedPostData } }) {
+                    if (!deletedPostData || !deletedPostData.success) return;
 
-  const [deletePost] = useMutation(DELETE_POST, {
-    update(cache, { data: { deletePost } } ) {
-      // read query
-      const existPostQuery = gql`
-      query GetPosts {
-        posts {
-          id
-        }
-      }`;
-      //read post on cache
-      const existPostQueryData = cache.readQuery({ query: existPostQuery});
+                    // Read the correct query (GET_PROFILE_QUERY) with the right variables
+                    const currentVars = { username: usernameFromParams };
+                    const existingProfileData = cache.readQuery<GetProfileQueryResponse, GetProfileQueryVars>({
+                        query: GET_PROFILE_QUERY,
+                        variables: currentVars,
+                    });
 
-      //if the data exist delete it
-      if (existPostQuery && existPostQueryData ) {
-        const updatePosts = existPostQueryData.posts.filter(
-          (post) => post.id !== deletePost?.id
-        )
-        // Write the updated list of posts back to the cache
-        cache.writeQuery({
-          query: existPostQuery,
-          data: {posts: updatePosts},
-        });
-      }
+                    if (existingProfileData?.profileData?.posts) {
+                        const updatedPosts = existingProfileData.profileData.posts.filter(
+                            (post: Post) => post.id !== deletedPostData.deletedId // Assume mutation returns deletedId
+                        );
+                        cache.writeQuery<GetProfileQueryResponse, GetProfileQueryVars>({
+                            query: GET_PROFILE_QUERY,
+                            variables: currentVars,
+                            data: {
+                                ...existingProfileData,
+                                profileData: {
+                                   ...existingProfileData.profileData,
+                                   posts: updatedPosts
+                                },
+                            },
+                        });
+                    }
+                },
+            onError(err) {
+              console.error("Error deleting post:", err);
+              // Add user feedback (e.g., toast notification)
+            }
+          });
 
-    },
-    onError(error) {
-      console.error("Error delete post", error)
-    }
-  })
+            useEffect(() => {
+                // Handle auth error specifically when fetching own profile
+                if (error && !usernameFromParams) {
+                    console.error("Error fetching own profile:", error);
+                    // Check if it's an authentication error
+                    if (error.message.includes('Not authenticated') || (error as ApolloError).graphQLErrors?.some(e => e.extensions?.code === 'UNAUTHENTICATED')) {
+                       localStorage.removeItem('token');
+                       navigate('/auth');
+                    }
+                }
+                // Refetch profile data if the username parameter changes
+                refetch({ username: usernameFromParams });
 
-  useEffect(() => {
-    if (error) {
-      localStorage.removeItem('token');
-      navigate('/auth');
-    }
-  }, [error, navigate]);
+            }, [error, usernameFromParams, navigate, refetch]);
 
-  if (loading) return <div className="text-center py-8">Loading profile...</div>;
-  if (!data?.me) return <div className="text-center py-8">Profile not found.</div>;
+            const handlePostDelete = (postId: string) => {
+              if (window.confirm('Are you sure you want to delete this post?')) {
+                deletePostMutation({ variables: { id: postId } });
+              }
+            };
 
-  const { name, username, email, bio, posts } = data.me;
+            if (loading) return <div className="text-center py-10">Loading profile...</div>;
+            if (error) {
+                // Differentiate error messages based on context
+                if (!usernameFromParams) {
+                     // Error fetching own profile
+                     return <div className="text-center py-10 text-red-600">Could not load your profile. Please try logging in again or refresh the page.</div>;
+                } else {
+                    // Error fetching someone else's profile
+                    return <div className="text-center py-10 text-red-600">Could not load profile for @{usernameFromParams}. User may not exist or there was a network issue.</div>;
+                }
+            }
+            // If no error, but data is missing (e.g., user not found by username)
+            if (!profileData) {
+                if (usernameFromParams) {
+                     return <div className="text-center py-10">User @{usernameFromParams} not found.</div>;
+                } else {
+                    // This case might indicate an issue fetching the logged-in user
+                    return <div className="text-center py-10">Could not load profile data.</div>;
+                }
+            }
 
-  return (
-    <div className="bg-gray-100 min-h-screen py-8">
-      <div className="max-w-3xl mx-auto bg-white shadow-lg rounded-md overflow-hidden">
-        {/* Profile Header */}
-        <div className="bg-white p-6 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <Link to="/" className="text-indigo-600 hover:underline">&larr; Home</Link>
-            <button> <Link to="/profile/edit"  className="bg-white-500 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded focus:outline-none focus:shadow-outline" >Profile Edit  </Link>
-            </button>
-          </div>
-          <div className="mt-6 flex items-center space-x-4">
-            <div className="w-16 h-16 rounded-full bg-gray-300 flex items-center justify-center text-2xl font-bold text-gray-600">
-              {name && name.charAt(0).toUpperCase()}
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-800">{name}</h1>
-              <p className="text-gray-600">@{username}</p>
-            </div>
-          </div>
-          <p className="text-gray-700 mt-2">{bio || 'No bio provided.'}</p>
-          <p className="text-gray-700 mt-1 text-sm">Email: {email}</p>
-        </div>
+            // Destructure data AFTER checking profileData exists
+            const { id: userId, name, username, bio, avatarUrl, posts } = profileData;
 
-        {/* Posts Section */}
-        <div className="p-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Posts ({posts.length})</h3>
-          {posts.length > 0 ? (
-            <div className="post-grid">
-              {posts.map((post) => (
-                <div key={post.id} className="post-card">
-
-                  <div >
-                    {/* Delete post button */}
-                  <button onClick={() => deletePost({ variables: { id: post.id }})} > 
-                    &times; 
-                 </button>
+            return (
+              <div className="profile-container max-w-4xl mx-auto">
+                {/* Profile Header */}
+                <header className="flex items-start p-4 md:p-8 border-b border-gray-300 mb-8">
+                  {/* Avatar - Larger on Medium screens */}
+                  <div className="w-20 h-20 md:w-36 md:h-36 rounded-full overflow-hidden mr-6 md:mr-16 flex-shrink-0">
+                    {avatarUrl ? (
+                      <img src={avatarUrl} alt={`${username}'s avatar`} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-500 text-4xl md:text-6xl">
+                        {username.charAt(0).toUpperCase()}
+                      </div>
+                    )}
                   </div>
 
-                  {post.imageUrl ? (
-                    <img 
-                    src={post.imageUrl} 
-                    alt={post.caption} 
-                    className="w-full h-auto rounded-md mb-2"  
-                    />
-                  ) : null } 
-                  {post.caption && (
-                    <p className="text-gray-700 mt-2">{post.caption}</p>
-                  )}
-
-                    <div>
-                      
+                  {/* Profile Info Section */}
+                  <div className="flex-grow mt-2 md:mt-4">
+                    <div className="flex items-center mb-3 md:mb-4">
+                      <h1 className="text-xl md:text-2xl font-light text-gray-800 mr-4">{username}</h1>
+                      {/* Conditional Buttons: Edit/Settings for own profile, Follow for others */}
+                      {isOwnProfile ? (
+                        <>
+                          <button
+                            onClick={() => setIsEditModalOpen(true)}
+                            className="border border-gray-300 rounded px-3 py-1 text-sm font-semibold mr-3 hover:bg-gray-50"
+                          >
+                            Edit Profile
+                          </button>
+                          {/* Optional Settings Button */}
+                          <button className="text-gray-700 hover:text-black">
+                            <FontAwesomeIcon icon={faCog} size="lg" />
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          {/* Follow button would go here */}
+                          <button className="bg-blue-500 text-white rounded px-3 py-1 text-sm font-semibold hover:bg-blue-600">
+                            Follow
+                          </button>
+                        </>
+                      )}
                     </div>
+
+                    {/* Profile Stats */}
+                    <div className="flex mb-4">
+                      <div className="mr-6">
+                        <span className="font-semibold">{posts.length}</span> {posts.length === 1 ? 'post' : 'posts'}
+                      </div>
+                      {/* Placeholder stats - replace with real data later */}
+                      <div className="mr-6">
+                        <span className="font-semibold">--</span> followers
+                      </div>
+                      <div>
+                        <span className="font-semibold">--</span> following
+                      </div>
+                    </div>
+
+                    {/* Profile Bio */}
+                    <div className="text-gray-900">
+                      <p className="font-semibold">{name}</p>
+                      {bio && <p className="mt-1 whitespace-pre-wrap">{bio}</p>}
+                    </div>
+                  </div>
+                </header>
+
+                {/* Create Post Button (only on own profile) */}
+                {isOwnProfile && (
+                  <div className="mb-6 text-center">
+                    <Link
+                      to="/create-post"
+                      className="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                    >
+                      <FontAwesomeIcon icon={faPlusSquare} className="mr-2" />
+                      Create Post
+                    </Link>
+                  </div>
+                )}
+
+                {/* Post Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1 md:gap-2">
+                  {posts.length > 0 ? (
+                    posts.map((post: Post) => (
+                      <div key={post.id} className="aspect-square relative group overflow-hidden bg-gray-100">
+                        <Link to={`/post/${post.id}`}>
+                          <img
+                            src={post.imageUrl}
+                            alt={post.caption || 'Post'}
+                            className="w-full h-full object-cover"
+                          />
+                          
+                          {/* Overlay with actions on hover */}
+                          <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            {/* Post details overlay */}
+                          </div>
+                        </Link>
+                        
+                        {/* Delete button (only on own profile) */}
+                        {isOwnProfile && (
+                          <button
+                            onClick={() => handlePostDelete(post.id)}
+                            className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100"
+                            aria-label="Delete post"
+                          >
+                            X
+                          </button>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="col-span-3 py-8 text-center text-gray-500">
+                      {isOwnProfile
+                        ? "You haven't shared any posts yet. Click 'Create Post' to get started!"
+                        : `${username} hasn't shared any posts yet.`}
+                    </div>
+                  )}
                 </div>
-              ))}
-            </div>
-            
-          ) : (
-            <p className="text-gray-500">No posts yet.</p>
-          )}
 
-        </div>
-      </div>
-
-      {/* Edit Profile Popup */}
-      {/* {isEditProfileOpen && (
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex justify-center items-center z-50">
-          <div className="bg-white rounded-lg shadow-lg overflow-hidden p-6 max-w-md w-full">
-            <EditProfile onClose={() => setIsEditProfileOpen(false)} />
-          </div>
-        </div>
-      )} */}
-    </div>
-  );
-}
+                {/* Edit Profile Modal */}
+                {isEditModalOpen && <EditProfileModal onClose={() => setIsEditModalOpen(false)} />}
+              </div>
+            );
+          }
 
 

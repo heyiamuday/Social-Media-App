@@ -1,3 +1,4 @@
+//backend/prisma/schema.prisma
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,9 +14,12 @@ model User {
   username  String   @unique 
   email    String @unique
   password String
-  posts    Post[]
   bio      String?
+  avatarUrl String?
+  posts    Post[]
   likes    Like[]
+  comments Comment[]
+
 }
 
 model Post {
@@ -27,6 +31,7 @@ model Post {
   author    User?    @relation(fields: [authorId], references: [id])
   authorId  Int?
   likes     Like[]
+  comments   Comment[]
 }
 
 model Like {
@@ -37,4 +42,20 @@ model Like {
   postId  Int
 
   @@unique([userId, postId])
+}
+
+model Comment {
+ id  Int @id @default(autoincrement())
+ text String
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+
+ author    User?    @relation(fields: [authorId], references: [id])
+ authorId  Int?
+ 
+ post   Post @relation(fields: [postId], references: [id])
+ postId  Int
+
+ @@index([postId])
+ @@index([authorId])
 }

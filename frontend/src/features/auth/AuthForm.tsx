@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useMutation, gql } from '@apollo/client';
 import { useNavigate } from 'react-router-dom';
-import './AuthForm.css';
 
 const SIGNUP_MUTATION = gql`
   mutation Signup($name: String!, $username: String!, $email: String!, $password: String!) {
@@ -48,6 +47,7 @@ export default function AuthForm() {
       onCompleted: (data) => {
         localStorage.setItem('token', data.login?.token || data.signup?.token);
         navigate('/');
+        window.location.reload();
       },
       onError: (err) => setError(err.message),
     }
@@ -69,131 +69,71 @@ export default function AuthForm() {
     mutate({ variables });
   };
 
-  return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="bg-white shadow-md rounded-md p-8 w-full max-w-md">
-        <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
-          {isLogin ? 'Login' : 'Sign Up'}
-        </h2>
-        {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-          <strong className="font-bold">Error!</strong>
-          <span className="block sm:inline">{error}</span>
-        </div>}
+  const inputStyle = "bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-sm focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5";
+  const labelStyle = "block mb-1 text-sm font-medium text-gray-900";
+  const buttonStyle = "w-full text-white bg-blue-500 hover:bg-blue-600 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center disabled:opacity-50";
 
-        {isLogin && (
-          <div className="mb-4">
-            <label htmlFor="loginIdentifier" className="block text-gray-700 text-sm font-bold mb-2">
-              Email or Username
-            </label>
-            <input
-              type="text"
-              id="loginIdentifier"
-              value={loginIdentifier}
-              onChange={(e) => setLoginIdentifier(e.target.value)}
-              required
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            />
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 px-4">
+      <div className="w-full max-w-sm bg-white border border-gray-200 rounded-lg shadow-md p-6 md:p-8 mb-4">
+        <h1 className="text-3xl font-semibold font-['Style_Script'] tracking-wider text-black text-center mb-6">
+          SocialApp
+        </h1>
+        {error && (
+          <div className="p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg" role="alert">
+            {error}
           </div>
         )}
-
         <form onSubmit={handleSubmit} className="space-y-4">
           {!isLogin && (
             <div>
-              <label htmlFor="name" className="block text-gray-700 text-sm font-bold mb-2">
-                Name
-              </label>
-              <input
-                type="text"
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              />
+              <label htmlFor="email" className={labelStyle}>Your email</label>
+              <input type="email" id="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputStyle} placeholder="name@company.com" required />
             </div>
           )}
-
           {!isLogin && (
             <div>
-              <label htmlFor="email" className="block text-gray-700 text-sm font-bold mb-2">
-                Email
-              </label>
-              <input
-                type="email"
-                id="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              />
+              <label htmlFor="name" className={labelStyle}>Full Name</label>
+              <input type="text" id="name" value={name} onChange={(e) => setName(e.target.value)} className={inputStyle} placeholder="John Doe" required />
             </div>
           )}
-
-          {!isLogin && (
+          {isLogin ? (
             <div>
-              <label htmlFor="username" className="block text-gray-700 text-sm font-bold mb-2">
-                Username
-              </label>
-              <input
-                type="text"
-                id="username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              />
+              <label htmlFor="loginIdentifier" className={labelStyle}>Username or Email</label>
+              <input type="text" id="loginIdentifier" value={loginIdentifier} onChange={(e) => setLoginIdentifier(e.target.value)} className={inputStyle} placeholder="username or name@company.com" required />
+            </div>
+          ) : (
+             <div>
+              <label htmlFor="username" className={labelStyle}>Username</label>
+              <input type="text" id="username" value={username} onChange={(e) => setUsername(e.target.value)} className={inputStyle} placeholder="johndoe" required />
             </div>
           )}
-
           <div>
-            <label htmlFor="password" className="block text-gray-700 text-sm font-bold mb-2">
-              Password
-            </label>
-            <input
-              type="password"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              minLength={6}
-              required
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            />
+            <label htmlFor="password" className={labelStyle}>Password</label>
+            <input type="password" id="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className={inputStyle} minLength={6} required />
           </div>
-
           {!isLogin && (
             <div>
-              <label htmlFor="confirmPassword" className="block text-gray-700 text-sm font-bold mb-2">
-                Confirm Password
-              </label>
-              <input
-                type="password"
-                id="confirmPassword"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                minLength={6}
-                required
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              />
+              <label htmlFor="confirmPassword" className={labelStyle}>Confirm password</label>
+              <input type="password" id="confirmPassword" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••" className={inputStyle} minLength={6} required />
             </div>
           )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-          >
-            {loading ? 'Processing...' : isLogin ? 'Login' : 'Create Account'}
+          <button type="submit" disabled={loading} className={buttonStyle}>
+            {loading ? 'Processing...' : isLogin ? 'Log In' : 'Sign up'}
           </button>
         </form>
+      </div>
 
-        <button
-          className="mt-4 text-indigo-600 hover:underline focus:outline-none"
-          onClick={() => setIsLogin(!isLogin)}
-        >
-          {isLogin
-            ? "Don't have an account? Sign Up"
-            : "Already have an account? Login"}
-        </button>
+      <div className="w-full max-w-sm bg-white border border-gray-200 rounded-lg shadow-md p-4 text-center">
+        <p className="text-sm text-gray-600">
+          {isLogin ? "Don't have an account?" : 'Have an account?'}{' '}
+          <button
+            onClick={() => { setIsLogin(!isLogin); setError(''); }}
+            className="font-medium text-blue-600 hover:underline"
+          >
+            {isLogin ? 'Sign up' : 'Log in'}
+          </button>
+        </p>
       </div>
     </div>
   );

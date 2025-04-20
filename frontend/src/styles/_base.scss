@@ -1,0 +1,14 @@
+// frontend/src/styles/_base.scss
+
+/* Define any base variables or mixins here */
+
+// Example variable
+$primary-color: #3b82f6; // Tailwind's blue-500
+
+/* Import Tailwind base styles if needed, or define base element styles */
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+} 
