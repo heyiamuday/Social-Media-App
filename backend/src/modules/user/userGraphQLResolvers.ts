@@ -142,7 +142,7 @@ export const userResolvers: any = {
 
     login: async (_parent: unknown, { loginIdentifier, password }: MutationLoginArgs, _context: ApolloContext) => {
        try {
-          console.log('loginIdentifier:', loginIdentifier);
+          console.log('Login attempt:', { loginIdentifier });
 
           const user = await prisma.user.findFirst({
             where: {
@@ -154,17 +154,32 @@ export const userResolvers: any = {
              include: { posts: { orderBy: { createdAt: 'desc' } } }
           });
 
-          if (!user) throw new GraphQLError('Invalid credentials', { extensions: { code: 'BAD_USER_INPUT' }});
+          console.log('User found:', user ? 'Yes' : 'No');
+          
+          if (!user) {
+            console.log('No user found with this identifier');
+            throw new GraphQLError('Invalid credentials', { extensions: { code: 'BAD_USER_INPUT' }});
+          }
 
+          console.log('Comparing passwords...');
           const valid = await bcrypt.compare(password, user.password);
-          if (!valid) throw new GraphQLError('Invalid credentials', { extensions: { code: 'BAD_USER_INPUT' }});
+          console.log('Password valid:', valid ? 'Yes' : 'No');
+          
+          if (!valid) {
+            console.log('Invalid password');
+            throw new GraphQLError('Invalid credentials', { extensions: { code: 'BAD_USER_INPUT' }});
+          }
 
+          console.log('Generating token...');
           const token = jwt.sign({ userId: user.id }, APP_SECRET);
+          console.log('Token generated successfully');
+          
           return { token, user };
        } catch(error: any) {
-           console.error('Login Error:', error);
+           console.error('Login Error:', error.message);
+           console.error('Error stack:', error.stack);
            if (error instanceof GraphQLError) throw error;
-           throw new GraphQLError('Login failed', { extensions: { code: 'INTERNAL_SERVER_ERROR' }});
+           throw new GraphQLError('Login failed: ' + error.message, { extensions: { code: 'INTERNAL_SERVER_ERROR' }});
        }
     },
 

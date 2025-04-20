@@ -45,11 +45,29 @@ export default function AuthForm() {
     isLogin ? LOGIN_MUTATION : SIGNUP_MUTATION,
     {
       onCompleted: (data) => {
-        localStorage.setItem('token', data.login?.token || data.signup?.token);
+        // Check if we actually got a token back
+        const token = data.login?.token || data.signup?.token;
+        if (!token) {
+          setError('Authentication failed: No token received');
+          return;
+        }
+        
+        localStorage.setItem('token', token);
+        console.log('Authentication successful. Token stored.');
         navigate('/');
-        window.location.reload();
       },
-      onError: (err) => setError(err.message),
+      onError: (err) => {
+        console.error('Authentication error:', err);
+        // Extract the specific error message from the GraphQL error if possible
+        const graphQLErrors = err.graphQLErrors || [];
+        if (graphQLErrors.length > 0) {
+          setError(graphQLErrors[0].message || 'Authentication failed');
+        } else if (err.networkError) {
+          setError('Network error. Please check your connection and try again.');
+        } else {
+          setError(err.message || 'Authentication failed');
+        }
+      },
     }
   );
 
@@ -62,10 +80,19 @@ export default function AuthForm() {
       return;
     }
 
+    // Validate password length
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      return;
+    }
+
     const variables = isLogin
       ? { loginIdentifier, password }
       : { name, username, email, password };
 
+    console.log(`Attempting to ${isLogin ? 'login' : 'signup'} with:`, 
+      isLogin ? { loginIdentifier } : { username, email });
+    
     mutate({ variables });
   };
 
@@ -77,7 +104,7 @@ export default function AuthForm() {
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 px-4">
       <div className="w-full max-w-sm bg-white border border-gray-200 rounded-lg shadow-md p-6 md:p-8 mb-4">
         <h1 className="text-3xl font-semibold font-['Style_Script'] tracking-wider text-black text-center mb-6">
-          SocialApp
+          Secret Talks
         </h1>
         {error && (
           <div className="p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg" role="alert">
