@@ -60,13 +60,19 @@ async function startServer() {
       // Check if the origin is allowed
       const isAllowed = allowedOrigins.some(allowedOrigin => {
         if (allowedOrigin === origin) return true;
-        if (allowedOrigin.includes('*') && origin.endsWith(allowedOrigin.replace('*', ''))) return true;
+        // Fix wildcard pattern matching
+        if (allowedOrigin.includes('*')) {
+          const pattern = allowedOrigin.replace('*', '.*');
+          const regex = new RegExp(pattern);
+          return regex.test(origin);
+        }
         return false;
       });
       
       if(isAllowed) {
         callback(null, true);
       } else {
+        console.log(`CORS blocked for origin: ${origin}`);
         callback(new Error('CORS not allowed'));
       }
     },
@@ -91,13 +97,19 @@ async function startServer() {
       // Check if the origin is allowed
       const isAllowed = allowedOrigins.some(allowedOrigin => {
         if (allowedOrigin === origin) return true;
-        if (allowedOrigin.includes('*') && origin.endsWith(allowedOrigin.replace('*', ''))) return true;
+        // Fix wildcard pattern matching
+        if (allowedOrigin.includes('*')) {
+          const pattern = allowedOrigin.replace('*', '.*');
+          const regex = new RegExp(pattern);
+          return regex.test(origin);
+        }
         return false;
       });
       
       if(isAllowed) {
         callback(null, true);
       } else {
+        console.log(`CORS blocked for origin: ${origin}`);
         callback(new Error('CORS not allowed'));
       }
     },
