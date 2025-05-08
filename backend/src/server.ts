@@ -44,79 +44,44 @@ async function startServer() {
 
   await server.start();
 
-  // Apply CORS middleware to the entire app
-  app.use(cors<cors.CorsRequest>({
-    origin: function(origin, callback) {
-      // Allow requests with no origin (like mobile apps or curl requests)
-      if(!origin) return callback(null, true);
-      
+  const corsOptions: cors.CorsOptions = {
+    origin: function(origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
+      if(!origin) return callback(null, true); // Allow requests with no origin
+
       const allowedOrigins = [
         'http://localhost:3000',
         'https://localhost:3000',
         'https://secrethub.netlify.app',
-        'https://*.netlify.app'
+        'https://secrettalksonly.netlify.app', // Explicitly add your current domain
       ];
-      
-      // Check if the origin is allowed
-      const isAllowed = allowedOrigins.some(allowedOrigin => {
-        if (allowedOrigin === origin) return true;
-        // Fix wildcard pattern matching
-        if (allowedOrigin.includes('*')) {
-          const pattern = allowedOrigin.replace('*', '.*');
-          const regex = new RegExp(pattern);
-          return regex.test(origin);
+
+      let isAllowed = allowedOrigins.some(allowedOrigin => allowedOrigin === origin);
+
+      // A more robust check for *.netlify.app if truly needed:
+      if (!isAllowed) {
+        const netlifyWildcardRegex = /^https:\/\/[a-zA-Z0-9\-]+\.netlify\.app$/;
+        if (netlifyWildcardRegex.test(origin)) {
+          isAllowed = true;
         }
-        return false;
-      });
-      
+      }
+
       if(isAllowed) {
         callback(null, true);
       } else {
         console.log(`CORS blocked for origin: ${origin}`);
-        callback(new Error('CORS not allowed'));
+        callback(new Error('CORS not allowed for this origin'));
       }
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'x-apollo-operation-name', 'apollo-require-preflight'],
     credentials: true,
-  }));
+  };
+
+  // Apply CORS middleware to the entire app
+  app.use(cors<cors.CorsRequest>(corsOptions));
 
   // Handle OPTIONS requests explicitly
-  app.options('*', cors<cors.CorsRequest>({
-    origin: function(origin, callback) {
-      // Allow requests with no origin (like mobile apps or curl requests)
-      if(!origin) return callback(null, true);
-      
-      const allowedOrigins = [
-        'http://localhost:3000',
-        'https://localhost:3000',
-        'https://secrethub.netlify.app',
-        'https://*.netlify.app'
-      ];
-      
-      // Check if the origin is allowed
-      const isAllowed = allowedOrigins.some(allowedOrigin => {
-        if (allowedOrigin === origin) return true;
-        // Fix wildcard pattern matching
-        if (allowedOrigin.includes('*')) {
-          const pattern = allowedOrigin.replace('*', '.*');
-          const regex = new RegExp(pattern);
-          return regex.test(origin);
-        }
-        return false;
-      });
-      
-      if(isAllowed) {
-        callback(null, true);
-      } else {
-        console.log(`CORS blocked for origin: ${origin}`);
-        callback(new Error('CORS not allowed'));
-      }
-    },
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-apollo-operation-name', 'apollo-require-preflight'],
-    credentials: true,
-  }));
+  app.options('*', cors<cors.CorsRequest>(corsOptions));
 
   app.use(bodyParser.json());
 
