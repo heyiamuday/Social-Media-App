@@ -44,32 +44,37 @@ async function startServer() {
 
   await server.start();
 
+  // Temporarily simplify CORS for debugging
   const corsOptions: cors.CorsOptions = {
     origin: function(origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
-      if(!origin) return callback(null, true); // Allow requests with no origin
-
-      const allowedOrigins = [
-        'http://localhost:3000',
-        'https://localhost:3000',
-        'https://secrethub.netlify.app',
-        'https://secrettalksonly.netlify.app', // Explicitly add your current domain
-      ];
-
-      let isAllowed = allowedOrigins.some(allowedOrigin => allowedOrigin === origin);
-
-      // A more robust check for *.netlify.app if truly needed:
-      if (!isAllowed) {
-        const netlifyWildcardRegex = /^https:\/\/[a-zA-Z0-9\-]+\.netlify\.app$/;
-        if (netlifyWildcardRegex.test(origin)) {
-          isAllowed = true;
-        }
-      }
-
-      if(isAllowed) {
+      // For debugging, let's try allowing all origins or a specific known one directly
+      console.log(`Request origin: ${origin}`); // Log the incoming origin
+      const knownAllowedOrigin = 'https://secrettalksonly.netlify.app';
+      if (origin === knownAllowedOrigin || !origin) { // Allow if exact match or no origin
+        console.log(`CORS allowed for origin: ${origin}`);
         callback(null, true);
       } else {
-        console.log(`CORS blocked for origin: ${origin}`);
-        callback(new Error('CORS not allowed for this origin'));
+        // Check if it's a common case like localhost for local dev even if not explicitly listed for this test
+        const devOriginRegex = /^http:\/\/localhost:[0-9]+$/;
+        if (origin && devOriginRegex.test(origin)) {
+          console.log(`CORS allowed for development origin: ${origin}`);
+          callback(null, true);
+          return;
+        }
+        // Fallback to checking your allowed list if you want to be a bit more restrictive during debug
+        const allowedOrigins = [
+          'http://localhost:3000',
+          'https://localhost:3000',
+          'https://secrethub.netlify.app', // This is your backend proxy, not usually an origin
+          'https://secrettalksonly.netlify.app',
+        ];
+        if (origin && allowedOrigins.includes(origin)) {
+          console.log(`CORS allowed from explicit list for origin: ${origin}`);
+          callback(null, true);
+        } else {
+          console.log(`CORS blocked for origin: ${origin}`);
+          callback(new Error('CORS not allowed for this origin'));
+        }
       }
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
