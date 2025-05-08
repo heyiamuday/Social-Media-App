@@ -1,9 +1,8 @@
-import { PrismaClient } from '@prisma/client';
 import { getUserId, APP_SECRET } from '../../utils/token.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { GraphQLError } from 'graphql';
-const prisma = new PrismaClient();
+import { prisma } from '../../lib/prisma.js';
 // Define a simplified resolver type
 export const userResolvers = {
     Query: {
@@ -104,7 +103,7 @@ export const userResolvers = {
         },
         login: async (_parent, { loginIdentifier, password }, _context) => {
             try {
-                console.log('loginIdentifier:', loginIdentifier);
+                console.log('Login attempt:', { loginIdentifier });
                 const user = await prisma.user.findFirst({
                     where: {
                         OR: [
@@ -114,19 +113,29 @@ export const userResolvers = {
                     },
                     include: { posts: { orderBy: { createdAt: 'desc' } } }
                 });
-                if (!user)
+                console.log('User found:', user ? 'Yes' : 'No');
+                if (!user) {
+                    console.log('No user found with this identifier');
                     throw new GraphQLError('Invalid credentials', { extensions: { code: 'BAD_USER_INPUT' } });
+                }
+                console.log('Comparing passwords...');
                 const valid = await bcrypt.compare(password, user.password);
-                if (!valid)
+                console.log('Password valid:', valid ? 'Yes' : 'No');
+                if (!valid) {
+                    console.log('Invalid password');
                     throw new GraphQLError('Invalid credentials', { extensions: { code: 'BAD_USER_INPUT' } });
+                }
+                console.log('Generating token...');
                 const token = jwt.sign({ userId: user.id }, APP_SECRET);
+                console.log('Token generated successfully');
                 return { token, user };
             }
             catch (error) {
-                console.error('Login Error:', error);
+                console.error('Login Error:', error.message);
+                console.error('Error stack:', error.stack);
                 if (error instanceof GraphQLError)
                     throw error;
-                throw new GraphQLError('Login failed', { extensions: { code: 'INTERNAL_SERVER_ERROR' } });
+                throw new GraphQLError('Login failed: ' + error.message, { extensions: { code: 'INTERNAL_SERVER_ERROR' } });
             }
         },
         updateProfile: async (_parent, args, context) => {

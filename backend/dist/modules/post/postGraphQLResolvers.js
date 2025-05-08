@@ -1,6 +1,5 @@
-import { PrismaClient } from '@prisma/client';
 import { getUserId } from '../../utils/token.js'; // Keep .js extension here
-const prisma = new PrismaClient();
+import { prisma } from '../../lib/prisma.js';
 // Removed the helper function as field resolvers will handle mapping
 export const postResolvers = {
     Query: {

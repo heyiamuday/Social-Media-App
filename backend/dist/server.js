@@ -38,7 +38,64 @@ async function startServer() {
     await server.start();
     // Apply CORS middleware to the entire app
     app.use(cors({
-        origin: ['http://localhost:3000', 'https://localhost:3000'], // Allow both HTTP and HTTPS
+        origin: function (origin, callback) {
+            // Allow requests with no origin (like mobile apps or curl requests)
+            if (!origin)
+                return callback(null, true);
+            const allowedOrigins = [
+                'http://localhost:3000',
+                'https://localhost:3000',
+                'https://secrethub.netlify.app',
+                'https://*.netlify.app'
+            ];
+            // Check if the origin is allowed
+            const isAllowed = allowedOrigins.some(allowedOrigin => {
+                if (allowedOrigin === origin)
+                    return true;
+                if (allowedOrigin.includes('*') && origin.endsWith(allowedOrigin.replace('*', '')))
+                    return true;
+                return false;
+            });
+            if (isAllowed) {
+                callback(null, true);
+            }
+            else {
+                callback(new Error('CORS not allowed'));
+            }
+        },
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', 'Authorization', 'x-apollo-operation-name', 'apollo-require-preflight'],
+        credentials: true,
+    }));
+    // Handle OPTIONS requests explicitly
+    app.options('*', cors({
+        origin: function (origin, callback) {
+            // Allow requests with no origin (like mobile apps or curl requests)
+            if (!origin)
+                return callback(null, true);
+            const allowedOrigins = [
+                'http://localhost:3000',
+                'https://localhost:3000',
+                'https://secrethub.netlify.app',
+                'https://*.netlify.app'
+            ];
+            // Check if the origin is allowed
+            const isAllowed = allowedOrigins.some(allowedOrigin => {
+                if (allowedOrigin === origin)
+                    return true;
+                if (allowedOrigin.includes('*') && origin.endsWith(allowedOrigin.replace('*', '')))
+                    return true;
+                return false;
+            });
+            if (isAllowed) {
+                callback(null, true);
+            }
+            else {
+                callback(new Error('CORS not allowed'));
+            }
+        },
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', 'Authorization', 'x-apollo-operation-name', 'apollo-require-preflight'],
         credentials: true,
     }));
     app.use(bodyParser.json());

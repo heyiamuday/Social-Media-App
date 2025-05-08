@@ -11,12 +11,11 @@ import {
     Post as GraphQLPost, // Use alias for GraphQL Post
     Comment as GraphQLComment, // Use alias for GraphQL Comment
     DeletePostResponse // Import the response type
-} from '../../../generated/graphql';
-import { PrismaClient, User as PrismaUser, Post as PrismaPost, Comment as PrismaComment, Like as PrismaLike } from '@prisma/client';
+} from '../../generated/graphql.js';
+import { User as PrismaUser, Post as PrismaPost, Comment as PrismaComment, Like as PrismaLike } from '@prisma/client';
 import { getUserId } from '../../utils/token.js'; // Keep .js extension here
 import { Context } from '../../context.js'; // Keep .js extension here, Import Context type
-
-const prisma = new PrismaClient();
+import { prisma } from '../../lib/prisma.js';
 
 // Removed the helper function as field resolvers will handle mapping
 

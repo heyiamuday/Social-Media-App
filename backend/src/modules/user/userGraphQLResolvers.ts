@@ -1,14 +1,13 @@
-import { PrismaClient, User, Post } from '@prisma/client';
+import { User, Post } from '@prisma/client';
 import { getUserId, APP_SECRET } from '../../utils/token.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { GraphQLError } from 'graphql';
-
-const prisma = new PrismaClient();
+import { prisma } from '../../lib/prisma.js';
 
 interface ApolloContext {
     req: any;
-    prisma: PrismaClient;
+    prisma: typeof prisma;
     userId?: number;
 }
 
