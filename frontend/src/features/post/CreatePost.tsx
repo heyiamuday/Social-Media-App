@@ -104,8 +104,7 @@ export default function CreatePost() {
     formData.append('image', imageFile);
 
     try {
-      const apiBaseUrl = import.meta.env.VITE_API_URL.replace('/graphql', '');
-      const response = await fetch(`${apiBaseUrl}/upload-image`, {
+      const response = await fetch(`http://localhost:4000/upload-image`, {
         method: 'POST',
         body: formData,
       });

@@ -44,38 +44,26 @@ async function startServer() {
 
   await server.start();
 
-  // Temporarily simplify CORS for debugging
   const corsOptions: cors.CorsOptions = {
-    origin: function(origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
-      // For debugging, let's try allowing all origins or a specific known one directly
-      console.log(`Request origin: ${origin}`); // Log the incoming origin
-      const knownAllowedOrigin = 'https://secrettalksonly.netlify.app';
-      if (origin === knownAllowedOrigin || !origin) { // Allow if exact match or no origin
-        console.log(`CORS allowed for origin: ${origin}`);
-        callback(null, true);
-      } else {
-        // Check if it's a common case like localhost for local dev even if not explicitly listed for this test
-        const devOriginRegex = /^http:\/\/localhost:[0-9]+$/;
-        if (origin && devOriginRegex.test(origin)) {
-          console.log(`CORS allowed for development origin: ${origin}`);
-          callback(null, true);
-          return;
-        }
-        // Fallback to checking your allowed list if you want to be a bit more restrictive during debug
-        const allowedOrigins = [
-          'http://localhost:3000',
-          'https://localhost:3000',
-          'https://secrethub.netlify.app', // This is your backend proxy, not usually an origin
-          'https://secrettalksonly.netlify.app',
-        ];
-        if (origin && allowedOrigins.includes(origin)) {
-          console.log(`CORS allowed from explicit list for origin: ${origin}`);
-          callback(null, true);
-        } else {
-          console.log(`CORS blocked for origin: ${origin}`);
-          callback(new Error('CORS not allowed for this origin'));
-        }
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like curl, mobile apps)
+      if (!origin) return callback(null, true);
+
+      // Allow all localhost ports for development
+      if (/^http:\/\/localhost:\d+$/.test(origin)) {
+        return callback(null, true);
       }
+
+      // Allow your production frontend
+      const allowedOrigins = [
+        'https://secrettalksonly.netlify.app',
+      ];
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      // Otherwise, block
+      callback(new Error('Not allowed by CORS'));
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'x-apollo-operation-name', 'apollo-require-preflight'],
@@ -124,7 +112,7 @@ async function startServer() {
   });
 
   app.listen(port, () => {
-    console.log(`🚀 Server ready at https://localhost:${port}/graphql`);
+    console.log(`🚀 Server ready at http://localhost:${port}/graphql`);
   });
 }
 

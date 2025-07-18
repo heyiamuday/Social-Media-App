@@ -43,8 +43,8 @@ async function startServer() {
             if (!origin)
                 return callback(null, true);
             const allowedOrigins = [
-                'http://localhost:3000',
-                'https://localhost:3000',
+                'http://localhost:4000',
+                'https://localhost:4000',
                 'https://secrethub.netlify.app',
                 'https://*.netlify.app'
             ];
@@ -74,8 +74,8 @@ async function startServer() {
             if (!origin)
                 return callback(null, true);
             const allowedOrigins = [
-                'http://localhost:3000',
-                'https://localhost:3000',
+                'http://localhost:4000',
+                'https://localhost:4000',
                 'https://secrethub.netlify.app',
                 'https://*.netlify.app'
             ];

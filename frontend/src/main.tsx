@@ -6,11 +6,7 @@ import App from './App';
 import './styles/main.scss';
 
 const httpLink = createHttpLink({
-  uri: import.meta.env.VITE_API_URL,
-  credentials: 'include',
-  fetchOptions: {
-    mode: 'cors',
-  },
+  uri: 'http://localhost:4000/graphql',
 });
 
 const authLink = setContext((_, { headers }) => {
