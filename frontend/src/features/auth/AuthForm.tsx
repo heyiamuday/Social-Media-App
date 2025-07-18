@@ -56,7 +56,7 @@ export default function AuthForm() {
         
         login(token); // Use the login function from context
         console.log('Authentication successful. State updated.');
-        navigate('/profile');
+        navigate('/');
       },
       onError: (err) => {
         console.error('Authentication error:', err);
