@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useMutation, gql } from '@apollo/client';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
 const SIGNUP_MUTATION = gql`
   mutation Signup($name: String!, $username: String!, $email: String!, $password: String!) {
@@ -40,6 +41,7 @@ export default function AuthForm() {
   const [username, setUsername] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const [mutate, { loading }] = useMutation(
     isLogin ? LOGIN_MUTATION : SIGNUP_MUTATION,
@@ -52,9 +54,9 @@ export default function AuthForm() {
           return;
         }
         
-        localStorage.setItem('token', token);
-        console.log('Authentication successful. Token stored.');
-        navigate('/');
+        login(token); // Use the login function from context
+        console.log('Authentication successful. State updated.');
+        navigate('/profile');
       },
       onError: (err) => {
         console.error('Authentication error:', err);

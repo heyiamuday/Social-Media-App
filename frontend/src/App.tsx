@@ -1,5 +1,6 @@
 //frontend/src/App.tsx
-import { Routes, Route, BrowserRouter, Link, useParams } from 'react-router-dom';
+import { Routes, Route, BrowserRouter, Link } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext.tsx';
 import AuthForm from './features/auth/AuthForm.tsx';
 import Home from './features/user/Home.tsx';
 import Profile from './features/user/Profile.tsx';
@@ -12,13 +13,9 @@ import CreatePost from './features/post/CreatePost.tsx';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHome, faPlusSquare, faUser } from '@fortawesome/free-solid-svg-icons';
 
-
-function App() {
-  // Basic check for authentication (replace with proper context/state management)
-  const isAuthenticated = !!localStorage.getItem('token');
-
+function AppContent() {
+  const { isAuthenticated, logout } = useAuth();
   return (
-    <BrowserRouter>
       <div className="bg-gray-50 min-h-screen font-sans">
         {/* Navigation Bar */}
         {isAuthenticated && ( // Only show nav if authenticated
@@ -28,7 +25,7 @@ function App() {
                 {/* Logo */}
                 <div className="flex-shrink-0">
                   <Link to="/" className="text-2xl font-semibold font-['Style_Script'] tracking-wider text-black"> {/* Instagram-like font */}
-                    SocialApp
+                  SecretTalks
                   </Link>
                 </div>
 
@@ -53,7 +50,9 @@ function App() {
                      {/* Replace with user avatar later */}
                      <FontAwesomeIcon icon={faUser} size="lg" />
                   </Link>
-                  {/* Optional: Logout button here or inside profile dropdown */}
+                  <button onClick={logout} className="text-gray-700 hover:text-black text-sm font-medium">
+                    Logout
+                  </button>
                 </div>
               </div>
             </div>
@@ -77,6 +76,15 @@ function App() {
           </div>
         </main>
       </div>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
     </BrowserRouter>
   );
 }

@@ -130,7 +130,7 @@ export const userResolvers: any = {
           const user = await prisma.user.create({
             data: { name, username, email, password: hashedPassword, bio: '' },
           });
-          const token = jwt.sign({ userId: user.id }, APP_SECRET);
+          const token = jwt.sign({ userId: user.id, username: user.username }, APP_SECRET, { expiresIn: '24h' });
           return { token, user };
        } catch(error: any) {
             console.error('Signup Error:', error);
@@ -181,7 +181,7 @@ export const userResolvers: any = {
           }
 
           console.log('Generating token for user:', user.username);
-          const token = jwt.sign({ userId: user.id }, APP_SECRET);
+          const token = jwt.sign({ userId: user.id, username: user.username }, APP_SECRET, { expiresIn: '24h' });
           console.log('Token generated successfully for user:', user.username);
           
           return { token, user };
