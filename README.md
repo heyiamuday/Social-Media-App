@@ -93,4 +93,5 @@ Social-Media-App/
 -   [ ] Advanced search functionality for users and posts.
 -   [ ] Infinite scrolling for the post feed.
 -   [ ] Password reset functionality via email.
+-   [ ] AuthO login with Google, Facebook, and Apple.
 -   [ ] Deploy backend to a cloud service like Heroku or AWS.
