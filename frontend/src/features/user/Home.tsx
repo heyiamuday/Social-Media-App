@@ -1,8 +1,8 @@
 // src/components/HomePage.tsx
-import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery, gql } from '@apollo/client';
+import { useQuery, gql, useApolloClient } from '@apollo/client';
 import PostCard from "../post/PostCard";
+import { useAuth } from '../../context/AuthContext';
 
 const GET_ALL_POSTS = gql`
   query GetAllPosts {
@@ -24,21 +24,17 @@ const GET_ALL_POSTS = gql`
 
 export default function Home() {
   const navigate = useNavigate();
-  const { loading, error, data, refetch } = useQuery(GET_ALL_POSTS);
-
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      navigate('/auth');
-    } else {
-      refetch();
-    }
-  }, [navigate, refetch]);
+  const { logout } = useAuth();
+  const client = useApolloClient();
+  const { loading, error, data } = useQuery(GET_ALL_POSTS);
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    navigate('/auth');
-    window.location.reload();
+    logout(); // Centralized logic from AuthContext to remove token and update state
+    // Reset Apollo cache to clear all user-specific data
+    client.resetStore().then(() => {
+      // Navigate to the login page after cache is cleared
+      navigate('/auth');
+    });
   };
 
   if (loading) return <div className="text-center py-10">Loading...</div>;
