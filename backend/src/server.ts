@@ -83,9 +83,6 @@ async function startServer() {
   // Apply CORS middleware to the entire app
   app.use(cors<cors.CorsRequest>(corsOptions));
 
-  // Handle OPTIONS requests explicitly
-  app.options('*', cors<cors.CorsRequest>(corsOptions));
-
   app.use(bodyParser.json());
 
   app.use(
