@@ -5,8 +5,11 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 import './styles/main.scss';
 
+// Use an environment variable for the GraphQL URI, with a fallback for safety.
+const graphqlUri = import.meta.env.VITE_GRAPHQL_URI || 'http://localhost:4000/graphql';
+
 const httpLink = createHttpLink({
-  uri: 'http://localhost:4000/graphql',
+  uri: graphqlUri,
 });
 
 const authLink = setContext((_, { headers }) => {
