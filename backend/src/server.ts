@@ -18,7 +18,7 @@ const __dirname = path.dirname(new URL(import.meta.url).pathname);
 console.log('Current working directory:', process.cwd());
 console.log('__dirname:', __dirname);
 // Use path.resolve for reliable path resolution
-const schemaString = readFileSync(path.resolve(process.cwd(), 'schema.graphql'), 'utf-8');
+const schemaString = readFileSync(path.resolve(__dirname, 'schema.graphql'), 'utf-8');
 
 // Prepend the scalar definition to the schema string
 const typeDefs = `
