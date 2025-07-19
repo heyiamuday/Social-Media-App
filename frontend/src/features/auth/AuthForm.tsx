@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useMutation, gql } from '@apollo/client';
+import { useMutation, gql, useApolloClient } from '@apollo/client';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
@@ -42,6 +42,7 @@ export default function AuthForm() {
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const { login } = useAuth();
+  const client = useApolloClient();
 
   const [mutate, { loading }] = useMutation(
     isLogin ? LOGIN_MUTATION : SIGNUP_MUTATION,
@@ -55,8 +56,12 @@ export default function AuthForm() {
         }
         
         login(token); // Use the login function from context
-        console.log('Authentication successful. State updated.');
-        navigate('/');
+        console.log('Authentication successful. State updated.'); 
+        // Reset the Apollo store to clear out any cached data from before logging in.
+        // Then, navigate to the home page. This prevents race conditions.
+        client.resetStore().then(() => {
+          navigate('/');
+        });
       },
       onError: (err) => {
         console.error('Authentication error:', err);
