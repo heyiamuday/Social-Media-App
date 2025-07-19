@@ -44,26 +44,35 @@ async function startServer() {
 
   await server.start();
 
+  // A more robust, production-ready CORS configuration
+  const allowedOrigins = [
+    'https://secrettalksonly.netlify.app', // Your production site
+    // This regex allows all Netlify deploy previews to connect automatically
+    /^https:\/\/deploy-preview-\d+--secrettalksonly\.netlify\.app$/,
+  ];
+
+  if (process.env.NODE_ENV !== 'production') {
+    // Allow any localhost port for local development
+    allowedOrigins.push(/^http:\/\/localhost:\d+$/);
+  }
+
   const corsOptions: cors.CorsOptions = {
     origin: (origin, callback) => {
       // Allow requests with no origin (like curl, mobile apps)
       if (!origin) return callback(null, true);
 
-      // Allow all localhost ports for development
-      if (/^http:\/\/localhost:\d+$/.test(origin)) {
-        return callback(null, true);
-      }
+      // Check if the incoming origin is in our list
+      const isAllowed = allowedOrigins.some(allowed => {
+        if (typeof allowed === 'string') return allowed === origin;
+        if (allowed instanceof RegExp) return allowed.test(origin);
+        return false;
+      });
 
-      // Allow your production frontend
-      const allowedOrigins = [
-        'https://secrettalksonly.netlify.app',
-      ];
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
+      if (isAllowed) {
+        callback(null, true);
+      } else {
+        callback(new Error('This origin is not allowed by CORS'));
       }
-
-      // Otherwise, block
-      callback(new Error('Not allowed by CORS'));
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'x-apollo-operation-name', 'apollo-require-preflight'],
@@ -112,7 +121,7 @@ async function startServer() {
   });
 
   app.listen(port, () => {
-    console.log(`🚀 Server ready at http://localhost:${port}/graphql`);
+    console.log(`🚀 Server ready on port ${port}`);
   });
 }
 
