@@ -104,7 +104,9 @@ export default function CreatePost() {
     formData.append('image', imageFile);
 
     try {
-      const response = await fetch(`http://localhost:4000/upload-image`, {
+      // Use an environment variable for the API base URL, with a fallback to localhost for local dev.
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
+      const response = await fetch(`${apiBaseUrl}/upload-image`, {
         method: 'POST',
         body: formData,
       });

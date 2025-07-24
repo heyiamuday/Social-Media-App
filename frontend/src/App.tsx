@@ -6,8 +6,7 @@ import Home from './features/user/Home.tsx';
 import Profile from './features/user/Profile.tsx';
 import EditProfileModal from './features/user/EditProfileModal.tsx';
 import CreatePost from './features/post/CreatePost.tsx';
-// Remove the old App.css import if it exists
-// import  './App.css'; // Remove this line
+
 
 // Import FontAwesome icons if you haven't already
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -29,7 +28,7 @@ function AppContent() {
                   </Link>
                 </div>
 
-                {/* Search Bar (Optional Placeholder) */}
+                {/* Search Bar (Not working future-planning) */}
                 <div className="hidden md:block">
                   <input
                     type="text"
