@@ -45,7 +45,8 @@ async function startServer() {
             const allowedOrigins = [
                 'http://localhost:4000',
                 'https://localhost:4000',
-                'https://secrethub.netlify.app',
+                'https://secrettalksonly.netlify.app',
+                'https://secrethub.onrender.com',
                 'https://*.netlify.app'
             ];
             // Check if the origin is allowed
