@@ -48,6 +48,7 @@ async function startServer() {
   // A more robust, production-ready CORS configuration
   const allowedOrigins = [
     'https://secrettalksonly.netlify.app', // Your production site
+    'https://secrethub.onrender.com',
     // This regex allows all Netlify deploy previews to connect automatically
     /^https:\/\/deploy-preview-\d+--secrettalksonly\.netlify\.app$/,
   ];
