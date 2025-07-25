@@ -1,0 +1,64 @@
+scalar DateTime
+
+type Query {
+    # Fetches the logged-in user's profile (if no username provided)
+    # OR fetches a specific user's profile by username
+    userProfile(username: String): User # Username is optional
+    me: User
+    allUsers: [User!]!
+    allPosts: [Post!]!
+    postsByUser(userId: ID!): [Post!]!
+    CommentsByPost(postId: ID!): [Comment!]!
+}
+
+type AuthPayload {
+    token: String!
+    user: User!
+}
+
+type User {
+    id: ID!
+    name: String!
+    username: String!
+    email: String!
+    posts: [Post!]!
+    bio: String
+    avatarUrl: String
+}
+
+type Post {
+  id: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  imageUrl: String!
+  caption: String
+  author: User!
+  likeCount: Int!
+  likedByCurrentUser: Boolean!
+  comments: [Comment!]!
+}
+
+type DeletePostResponse {
+    success: Boolean!
+    message: String!
+    id: ID
+}
+
+type Comment {
+  id: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  text: String!
+  author: User
+  post: Post!
+}
+
+type Mutation {
+    signup(name: String!, username: String!, email: String!, password: String!): AuthPayload!
+    login(loginIdentifier: String!, password: String!): AuthPayload
+    updateProfile(name: String!, username: String!, email: String!, bio: String, avatarUrl: String): User!
+    createPost(imageUrl: String!, caption: String): Post!
+    deletePost(id: ID!): DeletePostResponse!
+    toggleLike(postId: ID!): Post!
+    addComment(postId: ID!, text: String!): Comment!
+}

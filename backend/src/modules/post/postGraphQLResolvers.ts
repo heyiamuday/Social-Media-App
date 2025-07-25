@@ -231,7 +231,8 @@ export const postResolvers: Resolvers = {
               username: true,
               email: true,
               bio: true,
-              avatarUrl: true
+              avatarUrl: true,
+              password: true // Include password field for type compatibility
           }
       });
       if (!user) {
@@ -293,7 +294,8 @@ export const postResolvers: Resolvers = {
                 username: true,
                 email: true,
                 bio: true,
-                avatarUrl: true
+                avatarUrl: true,
+                password: true // Include password field for type compatibility
             }
         });
         console.log(`Comment.author resolver: Found user for authorId ${parent.authorId}:`, user ? user.id : 'null');

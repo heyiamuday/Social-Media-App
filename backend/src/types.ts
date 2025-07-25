@@ -1,3 +1,4 @@
 import { User as PrismaUser } from '@prisma/client';
 
-export type UserWithoutPassword = Omit<PrismaUser, 'password'>;
+// Make password optional in the type
+export type UserWithoutPassword = Partial<Pick<PrismaUser, 'password'>> & Omit<PrismaUser, 'password'>;

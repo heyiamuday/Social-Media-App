@@ -1,5 +1,5 @@
 import { GraphQLResolveInfo, GraphQLScalarType, GraphQLScalarTypeConfig } from 'graphql';
-import { UserWithoutPassword } from '../src/types';
+import { UserWithoutPassword } from '../types.js';
 import { Post as PrismaPost, Comment as PrismaComment } from '@prisma/client';
 import { Context } from '../context.js';
 export type Maybe<T> = T | null;
