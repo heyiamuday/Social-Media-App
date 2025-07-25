@@ -91,10 +91,10 @@ export default function CreatePost() {
     fileInputRef.current?.click();
   };
 
-  const handleUploadImage = async () => {
+  const handleUploadAndGetUrl = async (): Promise<string | null> => {
     if (!imageFile) {
       setUploadError('Please select an image file first.');
-      return;
+      return null;
     }
 
     setUploading(true);
@@ -122,44 +122,41 @@ export default function CreatePost() {
       }
       setUploadedImageUrl(data.imageUrl);
       console.log('Image uploaded successfully:', data.imageUrl);
+      return data.imageUrl;
     } catch (error: any) {
       console.error('Error uploading image:', error);
       setUploadError(error.message || 'An unknown error occurred during upload.');
       setImagePreviewUrl(null);
       setImageFile(null);
+      return null;
     } finally {
       setUploading(false);
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!uploadedImageUrl) {
-      if (imageFile && !uploading) {
-        handleUploadImage().then(() => {
-          if (uploadedImageUrl) {
-            setPosting(true);
-            setPostError('');
-            createPostMutation({ variables: { imageUrl: uploadedImageUrl, caption } });
-          } else {
-            setPostError('Image upload failed. Cannot create post.');
-          }
-        });
-      } else if (uploading) {
-        setPostError('Please wait for the image to finish uploading.');
-      } else {
-        setPostError('Please select and upload an image first.');
-      }
+    if (posting || uploading) return;
+
+    if (!imageFile) {
+      setPostError('Please select an image to share.');
       return;
     }
 
     setPosting(true);
     setPostError('');
-    createPostMutation({ variables: { imageUrl: uploadedImageUrl, caption } });
+
+    const imageUrl = await handleUploadAndGetUrl();
+
+    if (imageUrl) {
+      createPostMutation({ variables: { imageUrl, caption } });
+    } else {
+      // Error state is already set by handleUploadAndGetUrl
+      setPosting(false);
+    }
   };
 
-  const isReadyToPost = !!uploadedImageUrl;
-  const canAttemptUpload = !!imageFile && !uploading && !uploadedImageUrl;
+  const canShare = !!imageFile && !posting && !uploading;
 
   return (
     <div className="create-post-container max-w-3xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden mt-8">
@@ -169,7 +166,7 @@ export default function CreatePost() {
         <button
           type="submit"
           form="create-post-form"
-          disabled={posting || uploading || !isReadyToPost}
+          disabled={!canShare}
           className="text-sm font-semibold text-blue-500 hover:text-blue-700 disabled:text-blue-300"
         >
           {posting ? 'Sharing...' : 'Share'}
@@ -202,16 +199,6 @@ export default function CreatePost() {
               accept="image/*"
               className="hidden"
             />
-            {imageFile && !uploading && !uploadedImageUrl && (
-              <button
-                type="button"
-                onClick={handleUploadImage}
-                className="absolute bottom-4 right-4 bg-green-500 hover:bg-green-600 text-white font-semibold py-1.5 px-3 rounded shadow-md text-sm flex items-center space-x-1"
-              >
-                <FontAwesomeIcon icon={faUpload} />
-                <span>Confirm Upload</span>
-              </button>
-            )}
             {uploading && (
               <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
                 <FontAwesomeIcon icon={faSpinner} spin size="2x" className="text-white" />
