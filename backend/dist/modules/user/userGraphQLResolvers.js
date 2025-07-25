@@ -91,7 +91,7 @@ export const userResolvers = {
                 const user = await prisma.user.create({
                     data: { name, username, email, password: hashedPassword, bio: '' },
                 });
-                const token = jwt.sign({ userId: user.id }, APP_SECRET);
+                const token = jwt.sign({ userId: user.id, username: user.username }, APP_SECRET, { expiresIn: '24h' });
                 return { token, user };
             }
             catch (error) {
@@ -113,29 +113,41 @@ export const userResolvers = {
                     },
                     include: { posts: { orderBy: { createdAt: 'desc' } } }
                 });
-                console.log('User found:', user ? 'Yes' : 'No');
+                console.log('User found:', user ? user.username : 'No');
                 if (!user) {
                     console.log('No user found with this identifier');
-                    throw new GraphQLError('Invalid credentials', { extensions: { code: 'BAD_USER_INPUT' } });
+                    throw new GraphQLError('Invalid username, email, or password.', {
+                        extensions: { code: 'BAD_USER_INPUT' }
+                    });
                 }
-                console.log('Comparing passwords...');
+                if (typeof user.password !== 'string' || user.password.length === 0) {
+                    console.error('User object does not have a valid password hash for user:', user.id);
+                    throw new GraphQLError('Login failed due to server configuration issue.', {
+                        extensions: { code: 'INTERNAL_SERVER_ERROR' }
+                    });
+                }
+                console.log('Comparing passwords for user:', user.username);
                 const valid = await bcrypt.compare(password, user.password);
                 console.log('Password valid:', valid ? 'Yes' : 'No');
                 if (!valid) {
-                    console.log('Invalid password');
-                    throw new GraphQLError('Invalid credentials', { extensions: { code: 'BAD_USER_INPUT' } });
+                    console.log('Invalid password for user:', user.username);
+                    throw new GraphQLError('Invalid username, email, or password.', {
+                        extensions: { code: 'BAD_USER_INPUT' }
+                    });
                 }
-                console.log('Generating token...');
-                const token = jwt.sign({ userId: user.id }, APP_SECRET);
-                console.log('Token generated successfully');
+                console.log('Generating token for user:', user.username);
+                const token = jwt.sign({ userId: user.id, username: user.username }, APP_SECRET, { expiresIn: '24h' });
+                console.log('Token generated successfully for user:', user.username);
                 return { token, user };
             }
             catch (error) {
-                console.error('Login Error:', error.message);
-                console.error('Error stack:', error.stack);
-                if (error instanceof GraphQLError)
+                console.error('An error occurred during login:', error);
+                if (error instanceof GraphQLError) {
                     throw error;
-                throw new GraphQLError('Login failed: ' + error.message, { extensions: { code: 'INTERNAL_SERVER_ERROR' } });
+                }
+                throw new GraphQLError('Login failed due to an unexpected server error. Please try again later.', {
+                    extensions: { code: 'INTERNAL_SERVER_ERROR' }
+                });
             }
         },
         updateProfile: async (_parent, args, context) => {

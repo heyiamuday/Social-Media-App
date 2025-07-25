@@ -163,9 +163,13 @@ export const postResolvers = {
                 });
             }
             // Return the post object itself, field resolvers will handle nested fields
-            return prisma.post.findUnique({
+            const updatedPost = await prisma.post.findUnique({
                 where: { id: postIdInt }
             });
+            if (!updatedPost) {
+                throw new Error(`Post with ID ${postIdInt} not found.`);
+            }
+            return updatedPost;
         },
         // Return PrismaComment directly
         addComment: async (_parent, { postId, text }, context) => {
@@ -188,21 +192,24 @@ export const postResolvers = {
     Post: {
         // Resolve author for a Post
         author: async (parent) => {
-            if (!parent.authorId)
-                return null;
+            if (!parent.authorId) {
+                throw new Error(`Author ID is missing for post ${parent.id}`);
+            }
             const user = await prisma.user.findUnique({
                 where: { id: parent.authorId },
-                // Select fields matching GraphQL User type
                 select: {
                     id: true,
                     name: true,
                     username: true,
                     email: true,
                     bio: true,
-                    avatarUrl: true // Ensure avatarUrl is selected here!
+                    avatarUrl: true
                 }
             });
-            return user; // Return the selected user fields matching GraphQLUser
+            if (!user) {
+                throw new Error(`Author with ID ${parent.authorId} not found for post ${parent.id}`);
+            }
+            return user;
         },
         likeCount: async (parent) => {
             return prisma.like.count({
@@ -275,8 +282,9 @@ export const postResolvers = {
         },
         // Resolve post for a Comment
         post: async (parent) => {
-            if (!parent.postId)
-                return null;
+            if (!parent.postId) {
+                throw new Error(`Post ID is missing for comment ${parent.id}`);
+            }
             const post = await prisma.post.findUnique({
                 where: { id: parent.postId },
                 select: {
@@ -288,6 +296,9 @@ export const postResolvers = {
                     authorId: true,
                 }
             });
+            if (!post) {
+                throw new Error(`Post with ID ${parent.postId} not found for comment ${parent.id}`);
+            }
             return post;
         }
     }

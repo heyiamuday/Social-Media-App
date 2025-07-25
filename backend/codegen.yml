@@ -7,10 +7,11 @@ generates:
       - "typescript-resolvers"
     config:
       useIndexSignature: true
-      contextType: "../context#Context"
+      contextType: "../context.js#Context"
       mappers:
-        User: "@prisma/client#User as PrismaUser"
+        User: "@prisma/client#User as PrismaUser, Omit<PrismaUser, 'password'>"
         Post: "@prisma/client#Post as PrismaPost" 
         Comment: "@prisma/client#Comment as PrismaComment"
       scalars:
-        DateTime: Date 
+        DateTime: Date
+        ID: string 

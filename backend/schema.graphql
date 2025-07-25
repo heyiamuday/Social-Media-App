@@ -1,4 +1,5 @@
-#backend/schema.graphql
+scalar DateTime
+
 type Query {
     # Fetches the logged-in user's profile (if no username provided)
     # OR fetches a specific user's profile by username

@@ -71,18 +71,34 @@ async function startServer() {
       });
 
       if (isAllowed) {
-        callback(null, true);
+        callback(null, origin); // Return the actual origin instead of true
       } else {
-        callback(new Error('This origin is not allowed by CORS'));
+        callback(new Error('Not allowed by CORS'));
       }
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'x-apollo-operation-name', 'apollo-require-preflight'],
+    exposedHeaders: ['Access-Control-Allow-Origin', 'Vary'],
     credentials: true,
+    maxAge: 86400, // Cache preflight request for 24 hours
+    preflightContinue: false, // Prevents passing OPTIONS to next handler
   };
 
   // Apply CORS middleware to the entire app
   app.use(cors<cors.CorsRequest>(corsOptions));
+
+  // Handle CORS errors
+  app.use((err: Error, req: Request, res: express.Response, next: express.NextFunction) => {
+    if (err.message === 'Not allowed by CORS') {
+      res.status(403).json({
+        error: 'CORS Error',
+        message: 'This origin is not allowed to access this resource',
+        origin: req.headers.origin
+      });
+    } else {
+      next(err);
+    }
+  });
 
   app.use(bodyParser.json());
 

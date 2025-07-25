@@ -16,6 +16,7 @@ const __dirname = path.dirname(new URL(import.meta.url).pathname);
 console.log('Current working directory:', process.cwd());
 console.log('__dirname:', __dirname);
 // Use path.resolve for reliable path resolution
+//const schemaString = readFileSync(path.resolve(__dirname, 'schema.graphql'), 'utf-8');
 const schemaString = readFileSync(path.resolve(process.cwd(), 'schema.graphql'), 'utf-8');
 // Prepend the scalar definition to the schema string
 const typeDefs = `
@@ -36,69 +37,59 @@ async function startServer() {
         resolvers: combinedResolvers,
     });
     await server.start();
+    // A more robust, production-ready CORS configuration
+    const allowedOrigins = [
+        'https://secrettalksonly.netlify.app', // Your production site
+        'https://secrethub.onrender.com',
+        // This regex allows all Netlify deploy previews to connect automatically
+        /^https:\/\/deploy-preview-\d+--secrettalksonly\.netlify\.app$/,
+    ];
+    if (process.env.NODE_ENV !== 'production') {
+        // Allow any localhost port for local development
+        allowedOrigins.push(/^http:\/\/localhost:\d+$/);
+    }
+    const corsOptions = {
+        origin: (origin, callback) => {
+            // Allow requests with no origin (like curl, mobile apps)
+            if (!origin)
+                return callback(null, true);
+            // Check if the incoming origin is in our list
+            const isAllowed = allowedOrigins.some(allowed => {
+                if (typeof allowed === 'string')
+                    return allowed === origin;
+                if (allowed instanceof RegExp)
+                    return allowed.test(origin);
+                return false;
+            });
+            if (isAllowed) {
+                callback(null, origin); // Return the actual origin instead of true
+            }
+            else {
+                callback(new Error('Not allowed by CORS'));
+            }
+        },
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', 'Authorization', 'x-apollo-operation-name', 'apollo-require-preflight'],
+        exposedHeaders: ['Access-Control-Allow-Origin', 'Vary'],
+        credentials: true,
+        maxAge: 86400, // Cache preflight request for 24 hours
+        preflightContinue: false, // Prevents passing OPTIONS to next handler
+    };
     // Apply CORS middleware to the entire app
-    app.use(cors({
-        origin: function (origin, callback) {
-            // Allow requests with no origin (like mobile apps or curl requests)
-            if (!origin)
-                return callback(null, true);
-            const allowedOrigins = [
-                'http://localhost:4000',
-                'https://localhost:4000',
-                'https://secrettalksonly.netlify.app',
-                'https://secrethub.onrender.com',
-                'https://*.netlify.app'
-            ];
-            // Check if the origin is allowed
-            const isAllowed = allowedOrigins.some(allowedOrigin => {
-                if (allowedOrigin === origin)
-                    return true;
-                if (allowedOrigin.includes('*') && origin.endsWith(allowedOrigin.replace('*', '')))
-                    return true;
-                return false;
+    app.use(cors(corsOptions));
+    // Handle CORS errors
+    app.use((err, req, res, next) => {
+        if (err.message === 'Not allowed by CORS') {
+            res.status(403).json({
+                error: 'CORS Error',
+                message: 'This origin is not allowed to access this resource',
+                origin: req.headers.origin
             });
-            if (isAllowed) {
-                callback(null, true);
-            }
-            else {
-                callback(new Error('CORS not allowed'));
-            }
-        },
-        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-        allowedHeaders: ['Content-Type', 'Authorization', 'x-apollo-operation-name', 'apollo-require-preflight'],
-        credentials: true,
-    }));
-    // Handle OPTIONS requests explicitly
-    app.options('*', cors({
-        origin: function (origin, callback) {
-            // Allow requests with no origin (like mobile apps or curl requests)
-            if (!origin)
-                return callback(null, true);
-            const allowedOrigins = [
-                'http://localhost:4000',
-                'https://localhost:4000',
-                'https://secrethub.netlify.app',
-                'https://*.netlify.app'
-            ];
-            // Check if the origin is allowed
-            const isAllowed = allowedOrigins.some(allowedOrigin => {
-                if (allowedOrigin === origin)
-                    return true;
-                if (allowedOrigin.includes('*') && origin.endsWith(allowedOrigin.replace('*', '')))
-                    return true;
-                return false;
-            });
-            if (isAllowed) {
-                callback(null, true);
-            }
-            else {
-                callback(new Error('CORS not allowed'));
-            }
-        },
-        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-        allowedHeaders: ['Content-Type', 'Authorization', 'x-apollo-operation-name', 'apollo-require-preflight'],
-        credentials: true,
-    }));
+        }
+        else {
+            next(err);
+        }
+    });
     app.use(bodyParser.json());
     app.use('/graphql', expressMiddleware(server, {
         context: async ({ req }) => createContext(req),
@@ -122,7 +113,7 @@ async function startServer() {
         }
     });
     app.listen(port, () => {
-        console.log(`🚀 Server ready at https://localhost:${port}/graphql`);
+        console.log(`🚀 Server ready on port ${port}`);
     });
 }
 startServer().catch((error) => {

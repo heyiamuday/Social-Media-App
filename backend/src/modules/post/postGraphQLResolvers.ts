@@ -1,6 +1,5 @@
 import { 
     Resolvers, 
-    QueryAllPostsArgs, 
     QueryPostsByUserArgs, 
     QueryCommentsByPostArgs, 
     MutationCreatePostArgs, 
@@ -157,7 +156,7 @@ export const postResolvers: Resolvers = {
       }
     },  
     // Return PrismaPost or null
-    toggleLike: async (_parent: unknown, {postId }: MutationToggleLikeArgs, context: Context ): Promise<PrismaPost | null> => {
+    toggleLike: async (_parent: unknown, {postId }: MutationToggleLikeArgs, context: Context ): Promise<PrismaPost> => {
         const userId = getUserId(context);
         if (!userId) {
           throw new Error('Authentication required');
@@ -190,9 +189,13 @@ export const postResolvers: Resolvers = {
           })
         }
         // Return the post object itself, field resolvers will handle nested fields
-        return prisma.post.findUnique({ 
+        const updatedPost = await prisma.post.findUnique({ 
             where: { id: postIdInt } 
-        }); 
+        });
+        if (!updatedPost) {
+            throw new Error(`Post with ID ${postIdInt} not found.`);
+        }
+        return updatedPost; 
     },
     // Return PrismaComment directly
     addComment: async (_parent: unknown, { postId, text }: MutationAddCommentArgs, context: Context): Promise<PrismaComment> => {
@@ -216,21 +219,25 @@ export const postResolvers: Resolvers = {
   // Field resolvers for nested types
   Post: {
     // Resolve author for a Post
-    author: async (parent: PrismaPost): Promise<Partial<GraphQLUser> | null> => {
-      if (!parent.authorId) return null;
+    author: async (parent: PrismaPost): Promise<PrismaUser> => {
+      if (!parent.authorId) {
+        throw new Error(`Author ID is missing for post ${parent.id}`);
+      }
       const user = await prisma.user.findUnique({ 
           where: { id: parent.authorId },
-          // Select fields matching GraphQL User type
           select: {
               id: true,
               name: true,
               username: true,
               email: true,
               bio: true,
-              avatarUrl: true // Ensure avatarUrl is selected here!
+              avatarUrl: true
           }
       });
-      return user; // Return the selected user fields matching GraphQLUser
+      if (!user) {
+        throw new Error(`Author with ID ${parent.authorId} not found for post ${parent.id}`);
+      }
+      return user;
     },
     likeCount: async (parent: PrismaPost): Promise<number> => {
       return prisma.like.count({
@@ -271,7 +278,7 @@ export const postResolvers: Resolvers = {
   },
   Comment: {
     // Resolve author for a Comment
-    author: async (parent: PrismaComment): Promise<Partial<GraphQLUser>> => {
+    author: async (parent: PrismaComment): Promise<PrismaUser> => {
       console.log(`Comment.author resolver: parent comment ID = ${parent.id}, authorId = ${parent.authorId}`);
       if (!parent.authorId) {
         console.error(`Comment.author resolver: FATAL - authorId is missing for comment ID ${parent.id}`);
@@ -302,8 +309,10 @@ export const postResolvers: Resolvers = {
       }
     },
     // Resolve post for a Comment
-    post: async (parent: PrismaComment): Promise<Partial<GraphQLPost> | null> => {
-      if (!parent.postId) return null;
+    post: async (parent: PrismaComment): Promise<PrismaPost> => {
+      if (!parent.postId) {
+        throw new Error(`Post ID is missing for comment ${parent.id}`);
+      }
       const post = await prisma.post.findUnique({
           where: { id: parent.postId },
            select: {
@@ -315,6 +324,9 @@ export const postResolvers: Resolvers = {
               authorId: true,
           }
        });
+       if (!post) {
+        throw new Error(`Post with ID ${parent.postId} not found for comment ${parent.id}`);
+       }
        return post;
     }
   }
