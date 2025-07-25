@@ -47,10 +47,11 @@ async function startServer() {
 
   // A more robust, production-ready CORS configuration
   const allowedOrigins = [
-    'https://secrettalksonly.netlify.app', // Your production site
+    'https://secrettalksonly.netlify.app',
     'https://secrethub.onrender.com',
-    // This regex allows all Netlify deploy previews to connect automatically
-    /^https:\/\/deploy-preview-\d+--secrettalksonly\.netlify\.app$/,
+    'http://localhost:3000',
+    'http://localhost:5173',
+    /^https:\/\/.*\.netlify\.app$/, // Allow all Netlify subdomains
   ];
 
   if (process.env.NODE_ENV !== 'production') {
@@ -60,8 +61,13 @@ async function startServer() {
 
   const corsOptions: cors.CorsOptions = {
     origin: (origin, callback) => {
+      console.log('Request origin:', origin); // Debug log
+      
       // Allow requests with no origin (like curl, mobile apps)
-      if (!origin) return callback(null, true);
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
 
       // Check if the incoming origin is in our list
       const isAllowed = allowedOrigins.some(allowed => {
@@ -71,17 +77,25 @@ async function startServer() {
       });
 
       if (isAllowed) {
-        callback(null, origin); // Return the actual origin instead of true
+        callback(null, true);
       } else {
-        callback(new Error('Not allowed by CORS'));
+        console.log('Origin not allowed:', origin); // Debug log
+        callback(new Error(`CORS not allowed for origin: ${origin}`));
       }
     },
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-apollo-operation-name', 'apollo-require-preflight'],
-    exposedHeaders: ['Access-Control-Allow-Origin', 'Vary'],
     credentials: true,
-    maxAge: 86400, // Cache preflight request for 24 hours
-    preflightContinue: false, // Prevents passing OPTIONS to next handler
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'x-apollo-operation-name',
+      'apollo-require-preflight',
+      'Origin',
+      'Accept'
+    ],
+    exposedHeaders: ['Access-Control-Allow-Origin', 'Access-Control-Allow-Credentials'],
+    maxAge: 86400,
+    preflightContinue: false,
   };
 
   // Apply CORS middleware to the entire app
@@ -106,8 +120,22 @@ async function startServer() {
     '/graphql',
     expressMiddleware(server, {
       context: async ({ req }) => createContext(req),
-    })
+    }),
   );
+
+  // Add an error handler specifically for GraphQL endpoint
+  app.use('/graphql', (err: any, req: Request, res: express.Response, next: express.NextFunction) => {
+    console.error('GraphQL Error:', err);
+    if (err.message.includes('CORS')) {
+      res.status(403).json({
+        error: 'CORS Error',
+        message: err.message,
+        origin: req.headers.origin
+      });
+    } else {
+      next(err);
+    }
+  });
 
   // Add your /upload-image route handler here
   const storage = multer.memoryStorage(); // Store the file in memory
