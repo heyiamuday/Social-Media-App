@@ -82,9 +82,18 @@ export default function AuthForm() {
     e.preventDefault();
     setError('');
 
-    if (!isLogin && password !== confirmPassword) {
-      setError('Passwords do not match');
-      return;
+    // Validate email format when signing up
+    if (!isLogin) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        setError('Invalid email address');
+        return;
+      }
+      
+      if (password !== confirmPassword) {
+        setError('Passwords do not match');
+        return;
+      }
     }
 
     // Validate password length
