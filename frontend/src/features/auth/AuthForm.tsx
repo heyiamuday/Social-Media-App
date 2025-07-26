@@ -131,7 +131,23 @@ export default function AuthForm() {
           {!isLogin && (
             <div>
               <label htmlFor="email" className={labelStyle}>Your email</label>
-              <input type="email" id="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputStyle} placeholder="name@company.com" required />
+              <input 
+                type="email" 
+                id="email" 
+                value={email} 
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                  if (!emailRegex.test(e.target.value) && e.target.value !== '') {
+                    setError('Invalid email address');
+                  } else {
+                    setError('');
+                  }
+                }} 
+                className={inputStyle} 
+                placeholder="name@company.com" 
+                required 
+              />
             </div>
           )}
           {!isLogin && (
