@@ -19,7 +19,7 @@ console.log('Current working directory:', process.cwd());
 console.log('__dirname:', __dirname);
 // Use path.resolve for reliable path resolution
 //const schemaString = readFileSync(path.resolve(__dirname, 'schema.graphql'), 'utf-8');
-const schemaString = readFileSync(path.resolve(process.cwd(), 'schema.graphql'), 'utf-8'); 
+const schemaString = readFileSync(path.resolve(process.cwd(), 'schema.graphql'), 'utf-8');
 
 // Prepend the scalar definition to the schema string
 const typeDefs = `
@@ -62,7 +62,7 @@ async function startServer() {
   const corsOptions: cors.CorsOptions = {
     origin: (origin, callback) => {
       console.log('Request origin:', origin); // Debug log
-      
+
       // Allow requests with no origin (like curl, mobile apps)
       if (!origin) {
         callback(null, true);
@@ -135,6 +135,15 @@ async function startServer() {
     } else {
       next(err);
     }
+  });
+
+  // Health check endpoint for frontend to detect/warm up cold starts
+  app.get('/health', (req, res) => {
+    res.status(200).json({
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime()
+    });
   });
 
   // Add your /upload-image route handler here
